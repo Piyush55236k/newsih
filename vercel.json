@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "api/**/*.py", "use": "@vercel/python" },
+    { "src": "vite.config.ts", "use": "@vercel/static-build", "config": { "distDir": "dist" } }
+  ],
+  "routes": [
+    { "src": "/api/health", "dest": "/api/health.py" },
+    { "src": "/api/model/(.*)", "dest": "/api/model.py" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
+}

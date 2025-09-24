@@ -1,0 +1,26 @@
+:root { --bg: #0f172a; --panel:#111827; --text:#e5e7eb; --muted:#9ca3af; --acc:#22c55e; --acc2:#38bdf8; }
+*{ box-sizing:border-box }
+html,body,#root{ height:100% }
+body{ margin:0; background:var(--bg); color:var(--text); font:14px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial }
+.app{ display:grid; grid-template-columns: 260px 1fr; height:100% }
+.sidebar{ background:var(--panel); border-right:1px solid #1f2937; padding:18px; display:flex; flex-direction:column }
+.sidebar h1{ font-size:20px; margin:0 0 14px; color:#fff }
+.sidebar nav{ display:grid; gap:6px; margin:8px 0 12px }
+.nav-link{ padding:10px 12px; border-radius:8px; color:var(--text); text-decoration:none; background:#111827; border:1px solid #1f2937 }
+.nav-link:hover{ border-color:#334155 }
+.nav-link.active{ background:#0b1220; border-color:#2563eb; color:#fff }
+.sidebar footer{ margin-top:auto; color:var(--muted) }
+.content{ padding:20px; overflow:auto }
+.card{ background:#0b1220; border:1px solid #1f2937; border-radius:12px; padding:16px; margin-bottom:16px }
+.row{ display:flex; gap:12px; flex-wrap:wrap }
+.col{ flex:1 1 280px }
+button, .btn{ background:var(--acc); color:#06200f; border:none; padding:10px 14px; border-radius:10px; font-weight:600; cursor:pointer }
+button.secondary{ background:#1f2937; color:var(--text); border:1px solid #374151 }
+input, select, textarea{ width:100%; padding:10px 12px; background:#0b1220; color:var(--text); border:1px solid #1f2937; border-radius:8px }
+label{ display:block; margin:10px 0 6px; color:#d1d5db }
+.grid{ display:grid; gap:12px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.muted{ color:var(--muted) }
+.tag{ display:inline-block; padding:4px 8px; border-radius:999px; border:1px solid #1f2937; background:#0b1220; color:#a7f3d0; font-size:12px }
+.warning{ color:#fde68a }
+.ok{ color:#86efac }
+.bad{ color:#fca5a5 }
