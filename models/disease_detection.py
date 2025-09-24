@@ -1,14 +1,27 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import tensorflow as tf
-from tensorflow import keras
-from PIL import Image
-import numpy as np
-import io
-import base64
 import logging
 import os
 from typing import Dict, List, Tuple, Any
+import base64
+import io
+
+# Try to import ML libraries, fallback to basic image processing if not available
+try:
+    import tensorflow as tf
+    from tensorflow import keras
+    from PIL import Image
+    import numpy as np
+    ML_AVAILABLE = True
+except ImportError as e:
+    logging.warning(f"ML libraries not available: {e}. Using fallback mode.")
+    ML_AVAILABLE = False
+    try:
+        from PIL import Image
+        import numpy as np
+        PIL_AVAILABLE = True
+    except ImportError:
+        PIL_AVAILABLE = False
 
 # Disease classes - common plant diseases
 DISEASE_CLASSES = [
@@ -178,6 +191,9 @@ TREATMENTS = {
 
 def create_disease_model():
     """Create a simple CNN model for plant disease detection"""
+    if not ML_AVAILABLE:
+        return None
+        
     model = keras.Sequential([
         keras.layers.Rescaling(1./255, input_shape=(224, 224, 3)),
         
