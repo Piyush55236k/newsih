@@ -4,6 +4,20 @@
     { "src": "api/**/*.py", "use": "@vercel/python" },
     { "src": "package.json", "use": "@vercel/static-build", "config": { "distDir": "dist" } }
   ],
+  "headers": [
+    {
+      "source": "/index.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store" }
+      ]
+    },
+    {
+      "source": "/",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store" }
+      ]
+    }
+  ],
   "routes": [
     { "src": "/api/model/(.*)", "dest": "/api/model.py" },
     { "src": "/api/health", "dest": "/api/model.py" },
