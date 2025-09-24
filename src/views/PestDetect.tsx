@@ -19,8 +19,8 @@ export default function PestDetect(){
 
 	function apiBase(){
 		const env: any = (import.meta as any).env || {}
-		// Use disease detection API URL if provided, else try SIH API
-		return (env.VITE_DISEASE_API_URL as string) || (env.VITE_SIH_API_URL as string) || ''
+		// Use disease detection API URL if provided, else fallback to deployed API
+		return (env.VITE_DISEASE_API_URL as string) || 'https://newsih.onrender.com'
 	}
 
 	async function analyzeWithAI(imageData: string) {
