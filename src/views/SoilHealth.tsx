@@ -87,7 +87,7 @@ export default function SoilHealth() {
 					crop: String(form.crop || '').toLowerCase(),
 					inputs: { N: n, P: p, K: k, pH: ph, EC: ec }
 				}
-				const url = `${base}/api/model/recommend`
+				const url = base ? `${base}/recommend` : `/api/model/recommend`
 				let r: Response
 				try{
 					r = await fetch(url, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) })
