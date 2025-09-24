@@ -228,12 +228,12 @@ def create_disease_model():
 def create_app() -> Flask:
     app = Flask(__name__)
     
-    # Configure CORS
-    frontend_origin = os.environ.get("FRONTEND_ORIGIN")
-    if frontend_origin:
-        CORS(app, origins=[frontend_origin], supports_credentials=True)
-    else:
-        CORS(app)
+    # Configure CORS - Allow all origins for now
+    CORS(app, 
+         origins=["*"],  # Allow all origins
+         methods=["GET", "POST", "OPTIONS"],
+         allow_headers=["Content-Type", "Authorization"],
+         supports_credentials=False)
     
     # Set up logging
     logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
@@ -359,6 +359,15 @@ def create_app() -> Flask:
         except Exception as e:
             logging.error(f"Error in detect_disease: {e}")
             return jsonify({"error": "Prediction failed"}), 500
+
+    @app.route("/detect", methods=["OPTIONS"])
+    def detect_options():
+        """Handle preflight OPTIONS requests"""
+        response = jsonify({})
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        return response
     
     return app
 
