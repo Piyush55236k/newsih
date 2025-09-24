@@ -1,6 +1,7 @@
-# For Vercel Python functions
+# Disease Detection API requirements
 flask==3.0.3
 flask-cors==4.0.1
 tensorflow==2.15.0
 pillow==10.0.1
 numpy==1.24.3
+gunicorn==22.0.0

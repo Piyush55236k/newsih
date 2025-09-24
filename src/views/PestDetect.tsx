@@ -3,62 +3,80 @@ import { trackEvent } from '../lib/analytics'
 import { getSupabase } from '../lib/supabase'
 
 type Result = {
-	label: string
+	disease: string
 	confidence: number
-	tips: string[]
-}
-
-function analyzeImage(img: HTMLImageElement): Result {
-	const canvas = document.createElement('canvas')
-	const ctx = canvas.getContext('2d')!
-	const w = (canvas.width = Math.min(256, img.naturalWidth))
-	const h = (canvas.height = Math.min(256, img.naturalHeight))
-	ctx.drawImage(img, 0, 0, w, h)
-	const data = ctx.getImageData(0, 0, w, h).data
-	let brownish = 0, greenish = 0, pixels = w*h
-	for (let i=0; i<data.length; i+=4){
-		const r=data[i], g=data[i+1], b=data[i+2]
-		if (g>r && g>b) greenish++
-		if (r>g && g>b && r>90 && g>70) brownish++
-	}
-	const ratio = brownish/(pixels||1)
-	if (ratio>0.12) {
-		return {
-			label: 'Possible leaf spot/blight',
-			confidence: Math.min(0.95, ratio*2),
-			tips: [
-				'Remove heavily infected leaves to reduce spread',
-				'Avoid overhead irrigation; water at soil level',
-				'Consider copper-based fungicide per label guidance',
-			]
-		}
-	}
-	return {
-		label: 'No obvious disease signature',
-		confidence: 0.7,
-		tips: ['Monitor leaves for new lesions','Keep foliage dry; ensure airflow']
-	}
+	treatments: string[]
+	plant_type: string
+	severity: string
 }
 
 export default function PestDetect(){
 	const [src, setSrc] = useState<string>('')
 	const [res, setRes] = useState<Result | null>(null)
+	const [loading, setLoading] = useState(false)
+	const [error, setError] = useState<string | null>(null)
 	const imgRef = useRef<HTMLImageElement>(null)
+
+	function apiBase(){
+		const env: any = (import.meta as any).env || {}
+		// Use disease detection API URL if provided, else try SIH API
+		return (env.VITE_DISEASE_API_URL as string) || (env.VITE_SIH_API_URL as string) || ''
+	}
+
+	async function analyzeWithAI(imageData: string) {
+		setLoading(true)
+		setError(null)
+		try {
+			const base = apiBase().replace(/\/$/, '')
+			const url = base ? `${base}/detect` : `/api/disease/detect`
+			
+			const response = await fetch(url, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ image: imageData })
+			})
+			
+			if (!response.ok) {
+				const errorData = await response.json().catch(() => null)
+				throw new Error(errorData?.error || `Request failed (${response.status})`)
+			}
+			
+			const result = await response.json()
+			setRes(result)
+			trackEvent('pest_detect_ai', { 
+				disease: result.disease, 
+				confidence: result.confidence,
+				plant_type: result.plant_type 
+			})
+		} catch (e: any) {
+			const errorMsg = e.message || 'Failed to analyze image'
+			setError(errorMsg)
+			console.error('Disease detection error:', e)
+		} finally {
+			setLoading(false)
+		}
+	}
 
 	useEffect(()=>{
 		if (!src) return
 		const img = imgRef.current
 		if (!img) return
+		
+		const processImage = () => {
+			// Convert image to base64 for API
+			const canvas = document.createElement('canvas')
+			const ctx = canvas.getContext('2d')!
+			canvas.width = img.naturalWidth
+			canvas.height = img.naturalHeight
+			ctx.drawImage(img, 0, 0)
+			const imageData = canvas.toDataURL('image/jpeg', 0.8)
+			analyzeWithAI(imageData)
+		}
+		
 		if (!img.complete) {
-			img.onload = () => {
-				const r = analyzeImage(img)
-				setRes(r)
-				trackEvent('pest_detect', { label: r.label, confidence: r.confidence })
-			}
+			img.onload = processImage
 		} else {
-			const r = analyzeImage(img)
-			setRes(r)
-			trackEvent('pest_detect', { label: r.label, confidence: r.confidence })
+			processImage()
 		}
 	}, [src])
 
@@ -92,14 +110,17 @@ export default function PestDetect(){
 						</div>
 						<div className="col">
 							<h3>Result</h3>
-							{!res && <p className="muted">Analyzing…</p>}
+							{loading && <p className="muted">Analyzing with AI model…</p>}
+							{error && <p className="warning">Error: {error}</p>}
 							{res && (
 								<div>
-									<p><b>{res.label}</b> <span className="tag">{Math.round(res.confidence*100)}%</span></p>
+									<p><b>{res.disease.replace(/___/g, ' - ')}</b> <span className="tag">{Math.round(res.confidence*100)}% confidence</span></p>
+									<p className="muted">Plant: {res.plant_type} • Severity: {res.severity}</p>
+									<h4>Treatment Recommendations:</h4>
 									<ul>
-										{res.tips.map((t,i)=>(<li key={i}>{t}</li>))}
+										{res.treatments.map((t: string, i: number)=>(<li key={i}>{t}</li>))}
 									</ul>
-									<p className="muted">This is a lightweight, on-device heuristic. For accurate diagnosis, consult local extension services.</p>
+									<p className="muted">AI-powered disease detection. For critical cases, consult local agricultural experts.</p>
 								</div>
 							)}
 						</div>
