@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 
 type SoilForm = {
 	ph: number | ''
@@ -112,43 +112,6 @@ export default function SoilHealth() {
 			}
 		}
 
-	const analysis = useMemo(() => {
-		const ph = Number(form.ph)
-		const n = Number(form.nitrogen)
-		const p = Number(form.phosphorus)
-		const k = Number(form.potassium)
-		const ec = Number(form.ec)
-		if ([ph,n,p,k].some(Number.isNaN)) return null
-
-		const messages: string[] = []
-		let fert: string[] = []
-
-		if (ph < 6) { messages.push('Soil is acidic. Consider liming (agricultural lime) to raise pH.'); }
-		else if (ph > 7.5) { messages.push('Soil is alkaline. Apply elemental sulfur or acid-forming fertilizers.'); }
-		else { messages.push('Soil pH is within optimal range for most crops.'); }
-
-		const needN = n < 280
-		const needP = p < 12
-		const needK = k < 110
-		if (needN) fert.push('Urea (46-0-0) or UAN for nitrogen');
-		if (needP) fert.push('DAP/MAP or SSP for phosphorus');
-		if (needK) fert.push('MOP (0-0-60) for potassium');
-		if (!needN && !needP && !needK) fert = ['Balanced NPK (e.g., 10-10-10) maintenance dose']
-
-		if (!Number.isNaN(ec) && ec > 4) {
-			messages.push('High salinity detected (EC > 4 dS/m): reduce fertilizer rates and improve irrigation/leaching.')
-		}
-
-		const split = needN ? 'Split N: 40% basal, 30% tillering, 30% booting/flowering' : 'Maintain standard split per crop calendar'
-
-		return {
-			messages,
-			fert,
-			split,
-			dose: `${form.crop}: target NPK ratio ${needN?1:0}-${needP?1:0}-${needK?1:0} (adjust to local recommendations)`
-		}
-	}, [form])
-
 	return (
 		<div className="grid">
 			<section className="card">
@@ -189,20 +152,7 @@ export default function SoilHealth() {
 						</div>
 			</section>
 
-			<section className="card">
-				<h3>Guidance</h3>
-				{!analysis && <p className="muted">Fill all fields to see recommendations.</p>}
-				{analysis && (
-					<div>
-						<ul>
-							{analysis.messages.map((m,i)=>(<li key={i}>{m}</li>))}
-						</ul>
-						<p><b>Fertilizers:</b> {analysis.fert.join(', ')}</p>
-						<p><b>Application:</b> {analysis.split}</p>
-						<p className="muted">{analysis.dose}</p>
-					</div>
-				)}
-			</section>
+
 
 					{ai && (
 						<section className="card">
