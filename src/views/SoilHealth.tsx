@@ -29,7 +29,8 @@ export default function SoilHealth() {
 		async function pingApi(){
 			const base = apiBase().replace(/\/$/, '')
 			try{
-				const r = await fetch(`${base}/api/health`, { method:'GET' })
+				const url = base ? `${base}/` : `/api/health`
+				const r = await fetch(url, { method:'GET' })
 				setApiStatus(r.ok ? 'online' : 'offline')
 			}catch{
 				setApiStatus('offline')
