@@ -304,6 +304,49 @@ body {
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 }
 
+/* Quests Layout */
+.quests-grid {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.quest-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 260px;
+}
+
+.quest-steps {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0 0;
+  display: grid;
+  gap: 10px;
+}
+
+.quest-actions {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.progress {
+  height: 8px;
+  background: var(--panel-border);
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 12px 0 4px 0;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--green-400), var(--green-600));
+  width: 0%;
+}
+
 /* Buttons */
 button, .btn {
   background: linear-gradient(135deg, var(--green-500) 0%, var(--green-600) 100%);
@@ -541,6 +584,11 @@ img {
   
   .grid-3 {
     grid-template-columns: 1fr !important;
+  }
+
+  .quests-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px;
   }
   
   .card {

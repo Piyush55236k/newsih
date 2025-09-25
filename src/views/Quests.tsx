@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { trackEvent } from '../lib/analytics'
-import { addPoints, ensureOnlineSyncListener, getProfile, markQuestComplete, saveProfile } from '../lib/profile'
+import { ensureOnlineSyncListener, getProfile, markQuestComplete } from '../lib/profile'
 
 type Quest = { id: string; title: string; steps: string[]; reward: number }
 type State = { done: Record<string, boolean>; profilePoints: number; completed: Record<string, boolean> }
@@ -43,7 +43,7 @@ export default function Quests(){
 	const totalPossible = useMemo(()=> QUESTS.reduce((acc,q)=> acc + q.reward, 0), [])
 
 	return (
-		<div className="grid">
+		<div>
 			<section className="card">
 				<h2>Quests</h2>
 				<p className="muted">Complete quests to earn points and improve your farm. Points are stored locally and synced when online.</p>
@@ -52,27 +52,39 @@ export default function Quests(){
 					<span className="tag info">Total available: {totalPossible}</span>
 				</div>
 			</section>
-			{QUESTS.map(q => (
-				<section className="card" key={q.id}>
-					<h3>{q.title} <span className="tag warning" style={{marginLeft:8}}>+{q.reward} pts</span></h3>
-					<ul>
-						{q.steps.map((s, i)=> (
-							<li key={i}>
-								<label style={{display:'flex', alignItems:'center', gap:8}}>
-									<input type="checkbox" checked={!!state.done[`${q.id}:${i}`]} onChange={()=>toggle(q.id, i)} />
-									<span>{s}</span>
-								</label>
-							</li>
-						))}
-					</ul>
-					<div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:12}}>
-						<button type="button" onClick={()=>completeQuest(q)} disabled={!isQuestCompleted(q) || !!state.completed[q.id]}>
-							{state.completed[q.id] ? 'Completed' : 'Claim Reward'}
-						</button>
-						{state.completed[q.id] && <span className="tag success">Reward claimed</span>}
-					</div>
-				</section>
-			))}
+			<div className="quests-grid">
+				{QUESTS.map(q => {
+					const doneCount = q.steps.reduce((acc, _s, i)=> acc + (state.done[`${q.id}:${i}`] ? 1 : 0), 0)
+					const pct = Math.round((doneCount / q.steps.length) * 100)
+					return (
+						<section className="card quest-card" key={q.id}>
+							<div style={{display:'flex', justifyContent:'space-between', alignItems:'center', gap:12}}>
+								<h3 style={{marginBottom:0}}>{q.title}</h3>
+								<span className="tag warning">+{q.reward} pts</span>
+							</div>
+							<div className="progress" aria-label="quest progress" title={`${pct}%`}>
+								<div className="progress-bar" style={{width: `${pct}%`}}></div>
+							</div>
+							<ul className="quest-steps">
+								{q.steps.map((s, i)=> (
+									<li key={i}>
+										<label style={{display:'flex', alignItems:'center', gap:10}}>
+											<input type="checkbox" checked={!!state.done[`${q.id}:${i}`]} onChange={()=>toggle(q.id, i)} />
+											<span>{s}</span>
+										</label>
+									</li>
+								))}
+							</ul>
+							<div className="quest-actions">
+								<button type="button" onClick={()=>completeQuest(q)} disabled={!isQuestCompleted(q) || !!state.completed[q.id]}>
+									{state.completed[q.id] ? 'Completed' : 'Claim Reward'}
+								</button>
+								{state.completed[q.id] && <span className="tag success">Reward claimed</span>}
+							</div>
+						</section>
+					)
+				})}
+			</div>
 		</div>
 	)
 }
