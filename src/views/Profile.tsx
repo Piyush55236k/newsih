@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getProfile, syncProfile } from '../lib/profile'
+import { questTitleById } from '../lib/quests'
 
 export default function Profile(){
   const [pts, setPts] = useState(getProfile().points)
@@ -40,7 +41,7 @@ export default function Profile(){
           <p className="muted">No quests completed yet.</p>
         ) : (
           <ul>
-            {quests.map(q=> (<li key={q}>{q}</li>))}
+            {quests.map(q=> (<li key={q}>{questTitleById(q)}</li>))}
           </ul>
         )}
       </section>

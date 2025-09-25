@@ -1,15 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { trackEvent } from '../lib/analytics'
 import { ensureOnlineSyncListener, getProfile, markQuestComplete } from '../lib/profile'
+import { QUESTS } from '../lib/quests'
 
 type Quest = { id: string; title: string; steps: string[]; reward: number }
 type State = { done: Record<string, boolean>; profilePoints: number; completed: Record<string, boolean> }
 
-const QUESTS: Quest[] = [
-	{ id:'soil-setup', title:'Soil Test Setup', reward: 50, steps:['Collect soil sample','Measure pH','Record N-P-K','Get recommendations'] },
-	{ id:'pest-scout', title:'Pest Scouting', reward: 40, steps:['Check 5 random plants','Photograph suspicious leaves','Log findings','Plan treatment if needed'] },
-	{ id:'market-check', title:'Market Check', reward: 25, steps:['Pick commodity','Record local price','Compare with last week'] },
-]
+// Using shared QUESTS from lib
 
 const KEY = 'agri_quests_state'
 
@@ -62,9 +59,10 @@ export default function Quests(){
 								<h3 style={{marginBottom:0}}>{q.title}</h3>
 								<span className="tag warning">+{q.reward} pts</span>
 							</div>
-							<div className="progress" aria-label="quest progress" title={`${pct}%`}>
+											<div className="progress" aria-label="quest progress" title={`${pct}%`}>
 								<div className="progress-bar" style={{width: `${pct}%`}}></div>
 							</div>
+											<div className="muted" style={{fontSize:12, marginTop:4}}>{doneCount}/{q.steps.length} steps</div>
 							<ul className="quest-steps">
 								{q.steps.map((s, i)=> (
 									<li key={i}>
