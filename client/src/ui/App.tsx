@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { ensureProfileBootstrap, getProfile } from '../lib/profile'
 import { ToastHost } from './Toast'
 import Onboarding from './Onboarding'
+import { LANGUAGES, applyLanguage } from './i18n'
 import { hasSupabase } from '../lib/supabase'
 
 const NavLink = ({ to, label, icon }: { to: string; label: string; icon: string }) => {
@@ -19,6 +20,7 @@ const NavLink = ({ to, label, icon }: { to: string; label: string; icon: string 
 export default function App() {
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 	const [points, setPoints] = useState<number>(()=>getProfile().points)
+	const [lang, setLang] = useState<string>(()=> localStorage.getItem('preferredLanguage') || 'en')
 	
 	// Close mobile menu when route changes
 	const location = useLocation()
@@ -97,7 +99,26 @@ export default function App() {
 					{/* Admin link hidden from navigation; route still exists */}
 				</nav>
 				<footer>
-					<small>v0.1 • Agricultural Assistant Demo</small>
+					<div style={{display:'flex', flexDirection:'column', gap:8}}>
+						<label style={{fontSize:12}} className="muted">Language</label>
+						<select
+							value={lang}
+							onChange={async (e)=>{
+								const v = e.target.value
+								setLang(v)
+								localStorage.setItem('preferredLanguage', v)
+								// Debounce quick toggles
+								let timer = (window as any).__langTimer as number | undefined
+								if (timer) window.clearTimeout(timer)
+								;(window as any).__langTimer = window.setTimeout(async ()=>{
+									try { await applyLanguage(v) } catch {}
+								}, 200)
+							}}
+						>
+							{LANGUAGES.map(l => <option key={l.code} value={l.code}>{l.label}</option>)}
+						</select>
+						<small>v0.1 • Agricultural Assistant Demo</small>
+					</div>
 				</footer>
 			</aside>
 			

@@ -1,82 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getProfile, saveProfile } from '../lib/profile'
-
-type Lang = { code: string; label: string }
-
-const LANGUAGES: Lang[] = [
-  { code: 'en', label: 'English' },
-  { code: 'hi', label: 'हिन्दी (Hindi)' },
-  { code: 'mr', label: 'मराठी (Marathi)' },
-  { code: 'bn', label: 'বাংলা (Bengali)' },
-  { code: 'ta', label: 'தமிழ் (Tamil)' },
-  { code: 'te', label: 'తెలుగు (Telugu)' },
-  { code: 'ur', label: 'اردو (Urdu)' },
-  { code: 'gu', label: 'ગુજરાતી (Gujarati)' },
-  { code: 'kn', label: 'ಕನ್ನಡ (Kannada)' },
-  { code: 'ml', label: 'മലയാളം (Malayalam)' },
-  { code: 'pa', label: 'ਪੰਜਾਬੀ (Punjabi)' },
-  { code: 'or', label: 'ଓଡ଼ିଆ (Odia)' },
-  { code: 'as', label: 'অসমীয়া (Assamese)' },
-  { code: 'ne', label: 'नेपाली (Nepali)' },
-  { code: 'sd', label: 'سنڌي (Sindhi)' },
-  { code: 'si', label: 'සිංහල (Sinhala)' },
-]
-
-declare global {
-  interface Window {
-    googleTranslateElementInit?: () => void
-    google?: any
-  }
-}
-
-function loadGoogleTranslate() {
-  return new Promise<void>((resolve) => {
-    if ((window as any).google && (window as any).google.translate) {
-      resolve()
-      return
-    }
-    ;(window as any).googleTranslateElementInit = () => {
-      try {
-        // Mount a hidden widget so the combo exists for programmatic control
-        new (window as any).google.translate.TranslateElement(
-          { pageLanguage: 'en', autoDisplay: false },
-          'google_translate_element'
-        )
-      } catch {}
-      resolve()
-    }
-    const s = document.createElement('script')
-    s.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit'
-    s.async = true
-    document.head.appendChild(s)
-  })
-}
-
-function setCookie(name: string, value: string) {
-  const domain = window.location.hostname
-  const expires = new Date(Date.now() + 365*24*60*60*1000).toUTCString()
-  document.cookie = `${name}=${value}; expires=${expires}; path=/; domain=${domain}`
-}
-
-async function applyLanguage(lang: string) {
-  // Try programmatic change via the widget's combo
-  await loadGoogleTranslate()
-  const tries = 10
-  for (let i = 0; i < tries; i++) {
-    const combo = document.querySelector<HTMLSelectElement>('.goog-te-combo')
-    if (combo) {
-      combo.value = lang
-      combo.dispatchEvent(new Event('change'))
-      return
-    }
-    await new Promise(r => setTimeout(r, 100))
-  }
-  // Fallback: set cookie and reload (last resort)
-  setCookie('googtrans', `/en/${lang}`)
-  setCookie('googtrans', `/en/${lang}`) // some setups require duplicate without domain
-  window.location.reload()
-}
+import { LANGUAGES, applyLanguage, loadGoogleTranslate } from './i18n'
 
 export default function Onboarding() {
   const navigate = useNavigate()
@@ -96,6 +21,15 @@ export default function Onboarding() {
     }
   }, [])
 
+  // Lock scroll while overlay is visible
+  useEffect(() => {
+    if (visible) {
+      const prev = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
+      return () => { document.body.style.overflow = prev }
+    }
+  }, [visible])
+
   const langOptions = useMemo(() => LANGUAGES, [])
 
   if (!visible) {
@@ -108,7 +42,7 @@ export default function Onboarding() {
   return (
     <>
       <div id="google_translate_element" style={{ position: 'fixed', bottom: 0, left: 0, opacity: 0, pointerEvents: 'none' }} />
-      <div className="overlay-fullscreen">
+      <div className="overlay-fullscreen" role="dialog" aria-modal="true">
         <div className="overlay-card">
           {step === 1 && (
             <>
@@ -128,7 +62,8 @@ export default function Onboarding() {
               <div style={{display:'flex', justifyContent:'flex-end', gap:8, marginTop:16}}>
                 <button onClick={async ()=>{ 
                   localStorage.setItem('preferredLanguage', selectedLang)
-                  await applyLanguage(selectedLang)
+                  ;(document.activeElement as HTMLElement)?.blur()
+                  try { await applyLanguage(selectedLang) } catch {}
                   setStep(2)
                 }}>Next</button>
               </div>

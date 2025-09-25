@@ -828,12 +828,13 @@ img {
 .overlay-fullscreen {
   position: fixed;
   inset: 0;
-  background: color-mix(in oklab, var(--bg) 70%, black 30%);
+  background: color-mix(in oklab, var(--bg) 75%, black 25%);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 24px;
   z-index: 1000;
+  backdrop-filter: blur(10px) saturate(120%);
 }
 .overlay-card {
   background: var(--panel-bg);
@@ -842,6 +843,7 @@ img {
   padding: 20px;
   max-width: 720px;
   width: 100%;
+  box-shadow: 0 6px 32px rgba(0,0,0,0.25);
 }
 .lang-grid {
   display: grid;
@@ -856,6 +858,13 @@ img {
   border-radius: 8px;
   background: var(--bg);
 }
+
+/* Hide Google translate top bar/banner if it appears */
+iframe[id^=":1.container"],
+.goog-te-banner-frame, .goog-te-balloon-frame { display: none !important; visibility: hidden !important; }
+body { top: 0 !important; }
+/* Hide the powered-by link within our hidden container */
+#google_translate_element { height: 0; overflow: hidden; }
 
 /* Toasts */
 .toast-container {
