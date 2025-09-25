@@ -19,7 +19,8 @@ SERVICE_KEY = os.getenv('SUPABASE_SERVICE_KEY') or os.getenv('SUPABASE_SERVICE_R
 ADMIN_KEY = os.getenv('ADMIN_KEY')
 BUCKET = os.getenv('EVIDENCE_BUCKET', 'evidence')
 app = Flask(__name__)
-CORS(app, resources={r"/api/review/*": {"origins": "*"}})
+# Allow all API routes for simplicity
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 if not APP_URL or not SERVICE_KEY:
     print('[server] Warning: SUPABASE_URL or SUPABASE_SERVICE_KEY missing; admin/review endpoints will fail')
@@ -184,6 +185,110 @@ def admin_delete():
                     client.storage.from_(BUCKET).remove([rel])
                 except Exception:
                     pass
+        return jsonify({ 'ok': True })
+    except Exception as e:
+        return jsonify({ 'error': str(e) }), 500
+
+@app.post('/api/review/admin/revoke')
+def admin_revoke():
+    """Revoke a quest approval: set evidence to rejected or delete, deduct points, and remove quest from profile."""
+    if not require_admin(request):
+        return jsonify({ 'error': 'unauthorized' }), 401
+    try:
+        payload = request.get_json(force=True)
+        profile_id = payload.get('profileId')
+        quest_id = payload.get('questId')
+        points = int(payload.get('points') or 0)
+        delete_evidence = bool(payload.get('deleteEvidence'))
+        if not profile_id or not quest_id:
+            return jsonify({ 'error': 'profileId and questId required' }), 400
+        client = supa()
+        # Adjust profile: deduct points and remove quest from completed list
+        prof = client.table('profiles').select('id,points,quests_completed').eq('id', profile_id).maybe_single().execute()
+        cur_points = 0
+        cur_quests = []
+        try:
+            d = prof.data or {}
+            cur_points = int(d.get('points') or 0)
+            qraw = d.get('quests_completed')
+            if isinstance(qraw, list):
+                cur_quests = [str(x) for x in qraw]
+            else:
+                try:
+                    import json
+                    parsed = json.loads(str(qraw))
+                    if isinstance(parsed, list):
+                        cur_quests = [str(x) for x in parsed]
+                except Exception:
+                    pass
+        except Exception:
+            pass
+        new_points = max(0, cur_points - max(0, points))
+        new_quests = [q for q in cur_quests if q != quest_id]
+        client.table('profiles').upsert({
+            'id': profile_id,
+            'points': new_points,
+            'quests_completed': new_quests,
+            'updated_at': datetime.utcnow().isoformat() + 'Z'
+        }, { 'onConflict': 'id' }).execute()
+        # Update or delete evidence rows
+        if delete_evidence:
+            client.table('quest_evidence').delete().eq('profile_id', profile_id).eq('quest_id', quest_id).execute()
+        else:
+            client.table('quest_evidence').update({ 'status': 'rejected' }).eq('profile_id', profile_id).eq('quest_id', quest_id).execute()
+        return jsonify({ 'ok': True, 'newPoints': new_points })
+    except Exception as e:
+        return jsonify({ 'error': str(e) }), 500
+
+# Community and Feedback admin management
+@app.get('/api/admin/posts')
+def admin_posts_list():
+    if not require_admin(request):
+        return jsonify({ 'error': 'unauthorized' }), 401
+    try:
+        client = supa()
+        res = client.table('posts').select('id,created_at,author,content').order('created_at', desc=True).limit(200).execute()
+        return jsonify({ 'ok': True, 'items': res.data })
+    except Exception as e:
+        return jsonify({ 'error': str(e) }), 500
+
+@app.post('/api/admin/posts/delete')
+def admin_posts_delete():
+    if not require_admin(request):
+        return jsonify({ 'error': 'unauthorized' }), 401
+    try:
+        payload = request.get_json(force=True)
+        pid = payload.get('id')
+        if not pid:
+            return jsonify({ 'error': 'id required' }), 400
+        client = supa()
+        client.table('posts').delete().eq('id', pid).execute()
+        return jsonify({ 'ok': True })
+    except Exception as e:
+        return jsonify({ 'error': str(e) }), 500
+
+@app.get('/api/admin/feedback')
+def admin_feedback_list():
+    if not require_admin(request):
+        return jsonify({ 'error': 'unauthorized' }), 401
+    try:
+        client = supa()
+        res = client.table('feedback').select('id,created_at,rating,comment').order('created_at', desc=True).limit(200).execute()
+        return jsonify({ 'ok': True, 'items': res.data })
+    except Exception as e:
+        return jsonify({ 'error': str(e) }), 500
+
+@app.post('/api/admin/feedback/delete')
+def admin_feedback_delete():
+    if not require_admin(request):
+        return jsonify({ 'error': 'unauthorized' }), 401
+    try:
+        payload = request.get_json(force=True)
+        fid = payload.get('id')
+        if not fid:
+            return jsonify({ 'error': 'id required' }), 400
+        client = supa()
+        client.table('feedback').delete().eq('id', fid).execute()
         return jsonify({ 'ok': True })
     except Exception as e:
         return jsonify({ 'error': str(e) }), 500

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { trackEvent, getVerifiedSet, DEFAULT_RULES } from '../lib/analytics'
 import { getEvidenceStatus, submitEvidence, type EvidenceStatus } from '../lib/review'
 import { showToast } from '../ui/Toast'
-import { ensureOnlineSyncListener, getProfile, markQuestComplete } from '../lib/profile'
+import { ensureOnlineSyncListener, getProfile, markQuestComplete, unmarkQuestComplete, deductPoints } from '../lib/profile'
 import { QUESTS } from '../lib/quests'
 
 type Quest = { id: string; title: string; steps: string[]; reward: number }
@@ -48,10 +48,29 @@ export default function Quests(){
 	}, [])
 
 	// Load evidence review status for this profile
-	useEffect(()=>{
+		useEffect(()=>{
 		const pid = getProfile().id
 		const run = async()=>{
-			try { const r = await getEvidenceStatus(pid); setEvidenceByQuest(r.byQuest || {}) } catch {}
+				try {
+					const r = await getEvidenceStatus(pid); const latest = r.byQuest || {}
+					// revoke if necessary
+					let changed = false
+					const nextCompleted = { ...state.completed }
+					for (const q of QUESTS) {
+						const st = latest[q.id]?.status
+						if (state.completed[q.id] && st !== 'approved') {
+							unmarkQuestComplete(q.id, q.reward)
+							nextCompleted[q.id] = false as any
+							changed = true
+						}
+					}
+					setEvidenceByQuest(latest)
+					if (changed) {
+						const newState = { ...state, profilePoints: getProfile().points, completed: nextCompleted }
+						setState(newState)
+						try { localStorage.setItem(KEY, JSON.stringify(newState)) } catch {}
+					}
+				} catch {}
 		}
 		run()
 		// Re-check when tab gains focus
@@ -61,9 +80,32 @@ export default function Quests(){
 	}, [])
 
 	const [refreshing, setRefreshing] = useState(false)
-	const refreshStatus = async () => {
+		const refreshStatus = async () => {
 		setRefreshing(true)
-		try { const pid = getProfile().id; const r = await getEvidenceStatus(pid); setEvidenceByQuest(r.byQuest || {}); showToast('Status refreshed', 'info', 1500) }
+			try {
+				const pid = getProfile().id; const r = await getEvidenceStatus(pid); const latest = r.byQuest || {}
+				// If any quest was previously completed but its approval is now missing (rejected or no record), auto-revoke locally
+				const nextCompleted = { ...state.completed }
+				let changed = false
+				for (const q of QUESTS) {
+					const st = latest[q.id]?.status
+					if (state.completed[q.id] && st !== 'approved') {
+						// revoke
+						const p = unmarkQuestComplete(q.id, q.reward)
+						nextCompleted[q.id] = false as any
+						changed = true
+					}
+				}
+				setEvidenceByQuest(latest)
+				if (changed) {
+					const newState = { ...state, profilePoints: getProfile().points, completed: nextCompleted }
+					setState(newState)
+					try { localStorage.setItem(KEY, JSON.stringify(newState)) } catch {}
+					showToast('A quest approval was revoked. Points updated.', 'warning')
+				} else {
+					showToast('Status refreshed', 'info', 1500)
+				}
+			}
 		catch(e:any){ showToast(String(e?.message||e), 'error') }
 		finally { setRefreshing(false) }
 	}
@@ -89,25 +131,25 @@ export default function Quests(){
 		const onUpload = async (q: Quest, file: File) => {
 			// Block uploads if quest is already claimed or evidence is already pending/approved
 			const st = statusFor(q.id)
-			if (state.completed[q.id]) { setUploadErr(s=>({ ...s, [q.id]: 'This quest is already completed. Upload not allowed.' })); showToast('Quest already completed. Upload not allowed.', 'warning'); return }
-			if (st === 'pending' || st === 'approved') { setUploadErr(s=>({ ...s, [q.id]: 'Evidence is already submitted for review.' })); showToast('Evidence already submitted for this quest.', 'info'); return }
+			if (state.completed[q.id]) { setUploadErr((s: Record<string, string|undefined>)=>({ ...s, [q.id]: 'This quest is already completed. Upload not allowed.' })); showToast('Quest already completed. Upload not allowed.', 'warning'); return }
+			if (st === 'pending' || st === 'approved') { setUploadErr((s: Record<string, string|undefined>)=>({ ...s, [q.id]: 'Evidence is already submitted for review.' })); showToast('Evidence already submitted for this quest.', 'info'); return }
 		const reader = new FileReader()
-		setUploading(s=>({ ...s, [q.id]: true }))
-		setUploadErr(s=>({ ...s, [q.id]: undefined }))
+		setUploading((s: Record<string, boolean>)=>({ ...s, [q.id]: true }))
+		setUploadErr((s: Record<string, string|undefined>)=>({ ...s, [q.id]: undefined }))
 		reader.onload = async () => {
 			try {
 				const pid = getProfile().id
 				await submitEvidence({ profileId: pid, questId: q.id, imageData: String(reader.result) })
 				const r = await getEvidenceStatus(pid)
 				setEvidenceByQuest(r.byQuest || {})
-				setSelectedFile(s=>({ ...s, [q.id]: undefined }))
+			setSelectedFile((s: Record<string, File|undefined>)=>({ ...s, [q.id]: undefined }))
 					showToast('Evidence uploaded. Awaiting review.', 'success')
 			} catch (e:any) {
-					const msg = String(e?.message||e)
-					setUploadErr(s=>({ ...s, [q.id]: msg }))
+				const msg = String(e?.message||e)
+				setUploadErr((s: Record<string, string|undefined>)=>({ ...s, [q.id]: msg }))
 					showToast(msg, 'error')
 			} finally {
-				setUploading(s=>({ ...s, [q.id]: false }))
+			setUploading((s: Record<string, boolean>)=>({ ...s, [q.id]: false }))
 			}
 		}
 		reader.readAsDataURL(file)

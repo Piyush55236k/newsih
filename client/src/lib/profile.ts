@@ -64,6 +64,16 @@ export function addPoints(points: number, reason?: string): Profile {
   return p
 }
 
+export function deductPoints(points: number, reason?: string): Profile {
+  const p = loadProfile()
+  if (points > 0) p.points = Math.max(0, (p.points || 0) - points)
+  p.pending = p.pending || []
+  p.pending.push({ type: 'deductPoints', data: { points, reason }, ts: Date.now() })
+  saveProfile(p)
+  void syncProfile()
+  return p
+}
+
 export function markQuestComplete(questId: string, rewardPoints: number): Profile {
   const p = loadProfile()
   if (!p.completedQuests.includes(questId)) {
@@ -72,6 +82,19 @@ export function markQuestComplete(questId: string, rewardPoints: number): Profil
     p.pending.push({ type: 'questComplete', data: { questId, rewardPoints }, ts: Date.now() })
     // award points once per quest
     if (rewardPoints > 0) p.points += rewardPoints
+    saveProfile(p)
+    void syncProfile()
+  }
+  return p
+}
+
+export function unmarkQuestComplete(questId: string, rewardPoints: number): Profile {
+  const p = loadProfile()
+  if (p.completedQuests.includes(questId)) {
+    p.completedQuests = p.completedQuests.filter(q => q !== questId)
+    p.pending = p.pending || []
+    p.pending.push({ type: 'questRevoke', data: { questId, rewardPoints }, ts: Date.now() })
+    if (rewardPoints > 0) p.points = Math.max(0, (p.points || 0) - rewardPoints)
     saveProfile(p)
     void syncProfile()
   }

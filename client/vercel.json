@@ -1,27 +1,14 @@
 {
   "version": 2,
-  "installCommand": "npm install --include=dev",
-  "buildCommand": "npm run build",
-  "builds": [
-    { "src": "api/**/*.py", "use": "@vercel/python" },
-    { "src": "package.json", "use": "@vercel/static-build", "config": { "distDir": "dist" } }
-  ],
+  "installCommand": "cd client && (npm ci || npm install --include=dev)",
+  "buildCommand": "cd client && npm run build",
+  "outputDirectory": "client/dist",
   "headers": [
-    {
-      "source": "/index.html",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-store" }
-      ]
-    },
-    {
-      "source": "/",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-store" }
-      ]
-    }
+    { "source": "/index.html", "headers": [ { "key": "Cache-Control", "value": "no-store" } ] },
+    { "source": "/", "headers": [ { "key": "Cache-Control", "value": "no-store" } ] }
   ],
-  "rewrites": [
-    { "source": "/api/:match*", "destination": "/api/:match*" },
-    { "source": "/(.*)", "destination": "/index.html" }
+  "routes": [
+    { "handle": "filesystem" },
+    { "src": "/.*", "dest": "/index.html" }
   ]
 }
