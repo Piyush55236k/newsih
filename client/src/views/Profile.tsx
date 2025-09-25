@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { ensureProfileBootstrap, getProfile, syncProfile } from '../lib/profile'
+import { getEvidenceStatus } from '../lib/review'
 import { questTitleById } from '../lib/quests'
 
 export default function Profile(){
   const [pts, setPts] = useState(getProfile().points)
+  const [review, setReview] = useState<Record<string, any>>({})
   const [quests, setQuests] = useState<string[]>(getProfile().completedQuests)
   const [syncing, setSyncing] = useState(false)
   const [msg, setMsg] = useState<string|null>(null)
@@ -19,6 +21,8 @@ export default function Profile(){
       const p = getProfile()
       setPts(p.points)
       setQuests(p.completedQuests)
+      const run = async()=>{ try{ const r = await getEvidenceStatus(getProfile().id); setReview(r.byQuest||{}) }catch{} }
+      run()
     })
     return ()=> window.removeEventListener('profile:changed', h)
   }, [])
@@ -40,6 +44,16 @@ export default function Profile(){
           <button className="secondary" onClick={doSync} disabled={syncing}>{syncing ? 'Syncing…' : 'Sync now'}</button>
           {msg && <span className="tag info">{msg}</span>}
         </div>
+        {Object.keys(review).length>0 && (
+          <div style={{marginTop:8}}>
+            <h3>Evidence Review Status</h3>
+            <ul>
+              {Object.entries(review).map(([qid, v]: any)=> (
+                <li key={qid}>{qid}: {v.status}</li>
+              ))}
+            </ul>
+          </div>
+        )}
       </section>
       <section className="card">
         <h3>Completed Quests</h3>

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { trackEvent, getVerifiedSet, DEFAULT_RULES } from '../lib/analytics'
+import { getEvidenceStatus, submitEvidence, type EvidenceStatus } from '../lib/review'
 import { ensureOnlineSyncListener, getProfile, markQuestComplete } from '../lib/profile'
 import { QUESTS } from '../lib/quests'
 
@@ -32,6 +33,8 @@ export default function Quests(){
 
 	// Build a map of verification markers that correspond to specific quest steps
 	const [verified, setVerified] = useState<Set<string>>(()=> getVerifiedSet(DEFAULT_RULES))
+	const [evidenceByQuest, setEvidenceByQuest] = useState<Record<string, { status: EvidenceStatus; id: string; imageUrl?: string }>>({})
+	const [uploading, setUploading] = useState<Record<string, boolean>>({})
 
 	useEffect(()=>{
 		const onEv = () => setVerified(new Set(getVerifiedSet(DEFAULT_RULES)))
@@ -39,6 +42,15 @@ export default function Quests(){
 		// initial refresh in case events were emitted earlier in session
 		setVerified(new Set(getVerifiedSet(DEFAULT_RULES)))
 		return ()=> window.removeEventListener('analytics:event', onEv as any)
+	}, [])
+
+	// Load evidence review status for this profile
+	useEffect(()=>{
+		const pid = getProfile().id
+		const run = async()=>{
+			try { const r = await getEvidenceStatus(pid); setEvidenceByQuest(r.byQuest || {}) } catch {}
+		}
+		run()
 	}, [])
 
 	// Declarative mapping: questId -> stepIndex -> verification id
@@ -55,6 +67,27 @@ export default function Quests(){
 	}
 
 	const isQuestCompleted = (q: Quest): boolean => q.steps.every((_, i)=> isStepAutoVerified(q.id, i) || !!state.done[`${q.id}:${i}`])
+
+	const statusFor = (qId: string): EvidenceStatus | undefined => evidenceByQuest[qId]?.status
+	const canClaim = (q: Quest): boolean => isQuestCompleted(q) && statusFor(q.id) === 'approved' && !state.completed[q.id]
+
+	const onUpload = async (q: Quest, file: File) => {
+		const reader = new FileReader()
+		setUploading(s=>({ ...s, [q.id]: true }))
+		reader.onload = async () => {
+			try {
+				const pid = getProfile().id
+				await submitEvidence({ profileId: pid, questId: q.id, imageData: String(reader.result) })
+				const r = await getEvidenceStatus(pid)
+				setEvidenceByQuest(r.byQuest || {})
+			} catch (e:any) {
+				alert(String(e?.message||e))
+			} finally {
+				setUploading(s=>({ ...s, [q.id]: false }))
+			}
+		}
+		reader.readAsDataURL(file)
+	}
 
 	const completeQuest = (q: Quest) => {
 		if (isQuestCompleted(q) && !state.completed[q.id]){
@@ -106,11 +139,23 @@ export default function Quests(){
 									)
 								})}
 							</ul>
-							<div className="quest-actions">
-								<button className="btn-claim" type="button" onClick={()=>completeQuest(q)} disabled={!isQuestCompleted(q) || !!state.completed[q.id]}>
-									{state.completed[q.id] ? 'Completed' : 'Claim Reward'}
-								</button>
-								{state.completed[q.id] && <span className="tag success">Reward claimed</span>}
+							<div style={{display:'flex', flexDirection:'column', gap:8, marginTop:12}}>
+								<div className="row" style={{alignItems:'center'}}>
+									<div className="col">
+										<label className="muted" style={{marginBottom:6}}>Upload evidence (image/screenshot)</label>
+										<input type="file" accept="image/*" onChange={e=>{ const f=e.target.files?.[0]; if (f) onUpload(q, f) }} disabled={uploading[q.id]} />
+									</div>
+									<div className="col" style={{textAlign:'right'}}>
+										{statusFor(q.id) && <span className={`tag ${statusFor(q.id)==='approved'?'success':statusFor(q.id)==='rejected'?'danger':'warning'}`}>Review: {statusFor(q.id)}</span>}
+									</div>
+								</div>
+								<div className="quest-actions">
+									<button className="btn-claim" type="button" onClick={()=>completeQuest(q)} disabled={!canClaim(q)}>
+										{state.completed[q.id] ? 'Completed' : 'Claim Reward'}
+									</button>
+									{!state.completed[q.id] && statusFor(q.id)!=='approved' && <span className="muted">Claim unlocks after admin approves.</span>}
+									{state.completed[q.id] && <span className="tag success">Reward claimed</span>}
+								</div>
 							</div>
 						</section>
 					)
