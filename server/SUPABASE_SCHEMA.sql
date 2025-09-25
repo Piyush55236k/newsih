@@ -17,6 +17,11 @@ create table if not exists public.quest_evidence (
 create index if not exists idx_quest_evidence_profile on public.quest_evidence(profile_id);
 create index if not exists idx_quest_evidence_status on public.quest_evidence(status);
 
+-- Enforce at-most-one active (pending/approved) submission per (profile_id, quest_id)
+create unique index if not exists uniq_active_evidence
+  on public.quest_evidence(profile_id, quest_id)
+  where status in ('pending','approved');
+
 -- RLS policies (simple): allow insert/select by anyone; only service role (server) can update status
 alter table public.quest_evidence enable row level security;
 do $$ begin
