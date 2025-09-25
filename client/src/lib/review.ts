@@ -2,7 +2,7 @@ export type EvidenceStatus = 'pending' | 'approved' | 'rejected'
 
 function base() {
   const env: any = (import.meta as any).env || {}
-  return (env.VITE_REVIEW_API_BASE as string) || ''
+  return (env.VITE_REVIEW_API_BASE as string) || 'https://backend-tw3z.onrender.com'
 }
 
 export async function submitEvidence(args: { profileId: string; questId: string; notes?: string; imageData?: string; imageUrl?: string }) {

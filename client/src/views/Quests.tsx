@@ -117,7 +117,7 @@ export default function Quests(){
 			</section>
 			<div className="quests-grid">
 				{QUESTS.map(q => {
-					const doneCount = q.steps.reduce((acc, _s, i)=> acc + (state.done[`${q.id}:${i}`] ? 1 : 0), 0)
+					const doneCount = q.steps.reduce((acc, _s, i)=> acc + ((isStepAutoVerified(q.id, i) || state.done[`${q.id}:${i}`]) ? 1 : 0), 0)
 					const pct = Math.round((doneCount / q.steps.length) * 100)
 					return (
 						<section className="card quest-card" key={q.id}>

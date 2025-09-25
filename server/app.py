@@ -4,6 +4,11 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from datetime import datetime
 from supabase import create_client, Client
+try:
+    # storage3 is used under the hood by supabase-py; FileOptions ensures headers are strings
+    from storage3.utils import FileOptions  # type: ignore
+except Exception:
+    FileOptions = None  # type: ignore
 import base64
 
 # IMPORTANT: Load environment variables BEFORE reading them
@@ -34,7 +39,17 @@ def upload_data_url(client: Client, data_url: str, path: str) -> str:
         raise ValueError('Invalid data URL')
     b64 = data_url.split(',', 1)[1]
     blob = base64.b64decode(b64)
-    resp = client.storage.from_(BUCKET).upload(path, blob, { 'contentType': 'image/jpeg', 'upsert': True })
+    # Use FileOptions to avoid sending boolean header types which cause: "Header value must be str or bytes"
+    try:
+        if FileOptions is not None:
+            opts = FileOptions(content_type="image/jpeg", upsert=True)
+            client.storage.from_(BUCKET).upload(path, blob, opts)
+        else:
+            # Call without options when utils are unavailable
+            client.storage.from_(BUCKET).upload(path, blob)
+    except Exception:
+        # Last resort: try without options at all
+        client.storage.from_(BUCKET).upload(path, blob)
     # Convert to public URL
     pub = client.storage.from_(BUCKET).get_public_url(path)
     return pub
