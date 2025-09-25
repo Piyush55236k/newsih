@@ -2,6 +2,7 @@ import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { ensureProfileBootstrap, getProfile } from '../lib/profile'
 import { ToastHost } from './Toast'
+import Onboarding from './Onboarding'
 import { hasSupabase } from '../lib/supabase'
 
 const NavLink = ({ to, label, icon }: { to: string; label: string; icon: string }) => {
@@ -61,6 +62,8 @@ export default function App() {
 
 	return (
 		<div className="app">
+			{/* Onboarding overlay (language, name, auth/guest) */}
+			<Onboarding />
 			{/* Mobile Menu Toggle */}
 			<button 
 				className="mobile-menu-toggle"

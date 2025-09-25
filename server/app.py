@@ -10,6 +10,7 @@ try:
 except Exception:
     FileOptions = None  # type: ignore
 import base64
+import json
 
 # IMPORTANT: Load environment variables BEFORE reading them
 load_dotenv()
@@ -64,6 +65,61 @@ def storage_path_from_public_url(url: str) -> str | None:
     except Exception:
         pass
     return None
+
+# ---- Profile helpers ----
+def _parse_quests(value):
+    try:
+        if isinstance(value, list):
+            return [str(x) for x in value]
+        if value is None:
+            return []
+        arr = json.loads(str(value))
+        return [str(x) for x in arr] if isinstance(arr, list) else []
+    except Exception:
+        return []
+
+def _ensure_profile(client: Client, profile_id: str):
+    """Ensure a profile row exists; return the row as dict."""
+    row = { 'id': profile_id, 'points': 0, 'quests_completed': [] }
+    try:
+        res = client.table('profiles').select('*').eq('id', profile_id).maybe_single().execute()
+        data = getattr(res, 'data', None)
+        if data:
+            return data
+        # create
+        client.table('profiles').insert(row).execute()
+        return row
+    except Exception:
+        # best effort upsert
+        try:
+            client.table('profiles').upsert(row).execute()
+        except Exception:
+            pass
+        return row
+
+@app.get('/api/profile/state')
+def profile_state():
+    try:
+        profile_id = request.args.get('profileId')
+        if not profile_id:
+            return jsonify({ 'error': 'profileId required' }), 400
+        client = supa()
+        prof = _ensure_profile(client, profile_id)
+        points = int(prof.get('points') or 0)
+        completed = _parse_quests(prof.get('quests_completed'))
+        # last 50 ledger entries
+        try:
+            led = client.table('point_ledger').select('*').eq('user_id', profile_id).order('created_at', desc=True).limit(50).execute().data or []
+        except Exception:
+            led = []
+        # last 50 claims
+        try:
+            claims = client.table('quest_claims').select('*').eq('user_id', profile_id).order('claimed_at', desc=True).limit(50).execute().data or []
+        except Exception:
+            claims = []
+        return jsonify({ 'ok': True, 'profile': { 'id': profile_id, 'points': points, 'completedQuests': completed }, 'ledger': led, 'claims': claims })
+    except Exception as e:
+        return jsonify({ 'error': str(e) }), 500
 
 @app.get('/api/review/health')
 def health():
@@ -208,7 +264,7 @@ def admin_revoke():
         cur_points = 0
         cur_quests = []
         try:
-            d = prof.data or {}
+            d = getattr(prof, 'data', None) or {}
             cur_points = int(d.get('points') or 0)
             qraw = d.get('quests_completed')
             if isinstance(qraw, list):
@@ -230,12 +286,17 @@ def admin_revoke():
             'points': new_points,
             'quests_completed': new_quests,
             'updated_at': datetime.utcnow().isoformat() + 'Z'
-        }, { 'onConflict': 'id' }).execute()
+        }).execute()
         # Update or delete evidence rows
         if delete_evidence:
             client.table('quest_evidence').delete().eq('profile_id', profile_id).eq('quest_id', quest_id).execute()
         else:
             client.table('quest_evidence').update({ 'status': 'rejected' }).eq('profile_id', profile_id).eq('quest_id', quest_id).execute()
+        # Mark active claim as revoked if exists
+        try:
+            client.table('quest_claims').update({ 'status': 'revoked' }).eq('user_id', profile_id).eq('quest_id', quest_id).eq('status','claimed').execute()
+        except Exception:
+            pass
         return jsonify({ 'ok': True, 'newPoints': new_points })
     except Exception as e:
         return jsonify({ 'error': str(e) }), 500
@@ -290,6 +351,54 @@ def admin_feedback_delete():
         client = supa()
         client.table('feedback').delete().eq('id', fid).execute()
         return jsonify({ 'ok': True })
+    except Exception as e:
+        return jsonify({ 'error': str(e) }), 500
+
+@app.post('/api/quests/claim')
+def quests_claim():
+    """Claim quest reward after approval. Prevents double-claiming and updates points and completed list.
+    Body: { profileId, questId, reward, evidenceId? }
+    """
+    try:
+        payload = request.get_json(force=True)
+        profile_id = payload.get('profileId')
+        quest_id = payload.get('questId')
+        reward = int(payload.get('reward') or 0)
+        evidence_id = payload.get('evidenceId')
+        if not profile_id or not quest_id:
+            return jsonify({ 'error': 'profileId and questId required' }), 400
+        client = supa()
+        _ensure_profile(client, profile_id)
+        # Verify evidence approved
+        q = client.table('quest_evidence').select('id,status').eq('profile_id', profile_id).eq('quest_id', quest_id).eq('status','approved').order('created_at', desc=True).limit(1).execute()
+        if not q.data:
+            return jsonify({ 'error': 'No approved evidence found' }), 400
+        evid = q.data[0]['id']
+        if evidence_id and str(evidence_id) != str(evid):
+            # not a hard error; proceed if there is an approved one
+            pass
+        # Prevent double claim
+        already = client.table('quest_claims').select('id').eq('user_id', profile_id).eq('quest_id', quest_id).eq('status','claimed').limit(1).execute()
+        if already.data:
+            return jsonify({ 'error': 'Quest already claimed' }), 409
+        # Update profile
+        prof_res = client.table('profiles').select('points,quests_completed').eq('id', profile_id).maybe_single().execute()
+        prof = getattr(prof_res, 'data', None) or {}
+        points = int(prof.get('points') or 0) + max(0, reward)
+        completed = _parse_quests(prof.get('quests_completed'))
+        if quest_id not in completed:
+            completed.append(quest_id)
+        client.table('profiles').upsert({ 'id': profile_id, 'points': points, 'quests_completed': completed, 'updated_at': datetime.utcnow().isoformat() + 'Z' }).execute()
+        # Insert claim and ledger (best-effort)
+        try:
+            client.table('quest_claims').insert({ 'user_id': profile_id, 'quest_id': quest_id, 'reward': reward, 'status': 'claimed', 'evidence_id': evid }).execute()
+        except Exception:
+            pass
+        try:
+            client.table('point_ledger').insert({ 'user_id': profile_id, 'delta': reward, 'reason': quest_id, 'source': 'quest', 'evidence_id': evid }).execute()
+        except Exception:
+            pass
+        return jsonify({ 'ok': True, 'points': points, 'completedQuests': completed })
     except Exception as e:
         return jsonify({ 'error': str(e) }), 500
 

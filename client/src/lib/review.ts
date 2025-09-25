@@ -97,6 +97,23 @@ export async function adminRevoke(args: { profileId: string; questId: string; po
   return r.json()
 }
 
+// Profile and quest claim APIs
+export async function getProfileState(profileId: string) {
+  const r = await fetch(`${base()}/api/profile/state?profileId=${encodeURIComponent(profileId)}`)
+  if (!r.ok) throw new Error(`Profile state failed (${r.status})`)
+  return r.json() as Promise<{ ok: boolean; profile: { id: string; points: number; completedQuests: string[] }; ledger: any[]; claims: any[] }>
+}
+
+export async function claimQuest(args: { profileId: string; questId: string; reward: number; evidenceId?: string }) {
+  const r = await fetch(`${base()}/api/quests/claim`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(args) })
+  if (!r.ok) {
+    const ct = r.headers.get('content-type')||''
+    if (ct.includes('application/json')) throw new Error((await r.json().catch(()=>null))?.error || `Claim failed (${r.status})`)
+    throw new Error(`Claim failed (${r.status})`)
+  }
+  return r.json() as Promise<{ ok: boolean; points: number; completedQuests: string[] }>
+}
+
 export async function adminListPosts() {
   const url = `${base()}/api/admin/posts`
   const pwd = (typeof window !== 'undefined' && window.sessionStorage ? sessionStorage.getItem('adminPassword') : null) || (import.meta as any).env?.VITE_ADMIN_KEY || ''

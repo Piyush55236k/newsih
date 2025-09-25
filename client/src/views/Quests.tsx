@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { trackEvent, getVerifiedSet, DEFAULT_RULES } from '../lib/analytics'
-import { getEvidenceStatus, submitEvidence, type EvidenceStatus } from '../lib/review'
+import { getEvidenceStatus, submitEvidence, type EvidenceStatus, claimQuest } from '../lib/review'
 import { showToast } from '../ui/Toast'
 import { ensureOnlineSyncListener, getProfile, markQuestComplete, unmarkQuestComplete, deductPoints } from '../lib/profile'
 import { QUESTS } from '../lib/quests'
@@ -155,15 +155,24 @@ export default function Quests(){
 		reader.readAsDataURL(file)
 	}
 
-	const completeQuest = (q: Quest) => {
-		if (isQuestCompleted(q) && !state.completed[q.id]){
-			const updatedProfile = markQuestComplete(q.id, q.reward)
-			const next = { ...state, profilePoints: updatedProfile.points, completed: { ...state.completed, [q.id]: true } }
-			setState(next)
-			try { localStorage.setItem(KEY, JSON.stringify(next)) } catch {}
-			trackEvent('quest_completed', { id: q.id, reward: q.reward })
+		const completeQuest = async (q: Quest) => {
+			if (!isQuestCompleted(q) || state.completed[q.id]) return
+			try {
+				const pid = getProfile().id
+				const res = await claimQuest({ profileId: pid, questId: q.id, reward: q.reward })
+				const next = { ...state, profilePoints: res.points, completed: { ...state.completed, [q.id]: true } }
+				setState(next)
+				try { localStorage.setItem(KEY, JSON.stringify(next)) } catch {}
+				trackEvent('quest_completed', { id: q.id, reward: q.reward })
+			} catch (e:any) {
+				// Fall back to local only if server unreachable
+				const updatedProfile = markQuestComplete(q.id, q.reward)
+				const next = { ...state, profilePoints: updatedProfile.points, completed: { ...state.completed, [q.id]: true } }
+				setState(next)
+				try { localStorage.setItem(KEY, JSON.stringify(next)) } catch {}
+				trackEvent('quest_completed_local', { id: q.id, reward: q.reward, error: String(e?.message||e) })
+			}
 		}
-	}
 
 	const totalPossible = useMemo(()=> QUESTS.reduce((acc,q)=> acc + q.reward, 0), [])
 

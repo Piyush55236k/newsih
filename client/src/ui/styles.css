@@ -824,6 +824,39 @@ img {
   animation: fadeIn 0.5s ease-out 0.3s both;
 }
 
+/* Fullscreen onboarding overlay */
+.overlay-fullscreen {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in oklab, var(--bg) 70%, black 30%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 1000;
+}
+.overlay-card {
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 20px;
+  max-width: 720px;
+  width: 100%;
+}
+.lang-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+}
+.overlay-card input[type="text"],
+.overlay-card input:not([type]) {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  background: var(--bg);
+}
+
 /* Toasts */
 .toast-container {
   position: fixed;
