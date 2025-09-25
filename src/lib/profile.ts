@@ -43,6 +43,10 @@ export function loadProfile(): Profile {
 
 export function saveProfile(p: Profile) {
   try { localStorage.setItem(KEY, JSON.stringify(p)) } catch {}
+  try {
+    const evt = new CustomEvent('profile:changed', { detail: { profile: p } })
+    window.dispatchEvent(evt)
+  } catch {}
 }
 
 export function getProfile(): Profile {

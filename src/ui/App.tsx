@@ -1,5 +1,6 @@
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
+import { getProfile } from '../lib/profile'
 
 const NavLink = ({ to, label, icon }: { to: string; label: string; icon: string }) => {
 	const loc = useLocation()
@@ -14,6 +15,7 @@ const NavLink = ({ to, label, icon }: { to: string; label: string; icon: string 
 
 export default function App() {
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+	const [points, setPoints] = useState<number>(()=>getProfile().points)
 	
 	// Close mobile menu when route changes
 	const location = useLocation()
@@ -46,6 +48,13 @@ export default function App() {
 		}
 	}, [mobileMenuOpen])
 
+		// Listen for profile changes to update points badge
+		useEffect(() => {
+			const handler = (e: any) => setPoints(e?.detail?.profile?.points ?? getProfile().points)
+			window.addEventListener('profile:changed', handler)
+			return () => window.removeEventListener('profile:changed', handler)
+		}, [])
+
 	return (
 		<div className="app">
 			{/* Mobile Menu Toggle */}
@@ -65,6 +74,10 @@ export default function App() {
 			
 			<aside className={`sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`}>
 				<h1>AgriAssist</h1>
+						<div style={{display:'flex', alignItems:'center', gap:8, marginBottom:16}}>
+							<span className="tag success">⭐ {points} pts</span>
+							<Link className="nav-link" to="/profile"><span className="nav-icon">🧑‍🌾</span>Profile</Link>
+						</div>
 				<nav>
 					<NavLink to="/soil" label="Soil Health" icon="🌱" />
 					<NavLink to="/weather" label="Weather" icon="🌤️" />

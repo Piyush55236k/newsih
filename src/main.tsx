@@ -10,6 +10,7 @@ import VoiceAssist from './views/VoiceAssist'
 import Feedback from './views/Feedback'
 import Community from './views/Community'
 import Quests from './views/Quests'
+import Profile from './views/Profile'
 import './ui/styles.css'
 
 const router = createBrowserRouter([
@@ -23,6 +24,7 @@ const router = createBrowserRouter([
 			{ path: 'pests', element: <PestDetect /> },
 			{ path: 'market', element: <Market /> },
 			{ path: 'voice', element: <VoiceAssist /> },
+			{ path: 'profile', element: <Profile /> },
 			{ path: 'feedback', element: <Feedback /> },
 			{ path: 'community', element: <Community /> },
 			{ path: 'quests', element: <Quests /> }
