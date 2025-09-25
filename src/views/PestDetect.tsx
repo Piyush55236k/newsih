@@ -28,20 +28,30 @@ export default function PestDetect(){
 		setError(null)
 		try {
 			const base = apiBase().replace(/\/$/, '')
-			const url = base ? `${base}/detect` : `/api/disease/detect`
-			
-			const response = await fetch(url, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ image: imageData })
-			})
-			
-			if (!response.ok) {
-				const errorData = await response.json().catch(() => null)
-				throw new Error(errorData?.error || `Request failed (${response.status})`)
+			const tryUrls: string[] = []
+			if (base) tryUrls.push(`${base}/detect`)
+			tryUrls.push(`/api/disease/detect`)
+			let result: Result | null = null
+			let lastErr: any = null
+			for (const url of tryUrls){
+				try{
+					const response = await fetch(url, {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ image: imageData })
+					})
+					if (!response.ok) {
+						const errorData = await response.json().catch(() => null)
+						lastErr = new Error(errorData?.error || `Request failed (${response.status}) at ${url}`)
+						continue
+					}
+					result = await response.json()
+					break
+				}catch(e:any){
+					lastErr = e
+				}
 			}
-			
-			const result = await response.json()
+			if (!result) throw lastErr || new Error('Failed to analyze image')
 			setRes(result)
 			trackEvent('pest_detect_ai', { 
 				disease: result.disease, 

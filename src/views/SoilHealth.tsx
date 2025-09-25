@@ -28,10 +28,14 @@ export default function SoilHealth() {
 
 		async function pingApi(){
 			const base = apiBase().replace(/\/$/, '')
+			// Try configured base first; if it fails, try local serverless health
 			try{
-				const url = base ? `${base}/` : `/api/health`
-				const r = await fetch(url, { method:'GET' })
-				setApiStatus(r.ok ? 'online' : 'offline')
+				if (base) {
+					const r1 = await fetch(`${base}/`, { method:'GET' })
+					if (r1.ok) { setApiStatus('online'); return }
+				}
+				const r2 = await fetch(`/api/health`, { method:'GET' })
+				setApiStatus(r2.ok ? 'online' : 'offline')
 			}catch{
 				setApiStatus('offline')
 			}
@@ -88,13 +92,25 @@ export default function SoilHealth() {
 					crop: String(form.crop || '').toLowerCase(),
 					inputs: { N: n, P: p, K: k, pH: ph, EC: ec }
 				}
-				const url = base ? `${base}/recommend` : `/api/model/recommend`
-				let r: Response
-				try{
-					r = await fetch(url, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) })
-				}catch(err:any){
+				// Try configured base first; if it fails, fall back to serverless function path
+				const tryUrls: string[] = []
+				if (base) tryUrls.push(`${base}/recommend`)
+				tryUrls.push(`/api/model/recommend`)
+				let r: Response | null = null
+				let lastErr: any = null
+				for (const url of tryUrls){
+					try{
+						r = await fetch(url, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) })
+						if (r.ok) { break }
+						// If 404 or non-OK, try next URL
+						lastErr = new Error(`Request failed (${r.status}) at ${url}`)
+					} catch (err:any) {
+						lastErr = err
+					}
+				}
+				if (!r) {
 					setApiStatus('offline')
-					throw new Error(`Cannot reach AI API at ${url}. Is the backend running and accessible?`)
+					throw new Error(lastErr?.message || 'Cannot reach AI API')
 				}
 				let resp: any | null = null
 				try{ resp = await r.json() } catch { /* ignore */ }

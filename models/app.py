@@ -49,6 +49,15 @@ def create_app() -> Flask:
             logging.error(f"Error in recommend: {e}")
             return jsonify({"error": "Prediction failed"}), 500
 
+    # Explicit CORS preflight for some platforms that don't auto-handle
+    @app.route("/recommend", methods=["OPTIONS"])
+    def recommend_options():
+        resp = jsonify({})
+        resp.headers["Access-Control-Allow-Origin"] = "*"
+        resp.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+        resp.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+        return resp, 204
+
     return app
 
 app = create_app()
