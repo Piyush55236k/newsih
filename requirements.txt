@@ -1,6 +1,5 @@
-# For Vercel Python functions
+# For Vercel Python functions (no heavy ML deps; TensorFlow handled optionally)
 flask==3.0.3
 flask-cors==4.0.1
-tensorflow==2.15.0
-pillow==10.0.1
-numpy==1.24.3
+pillow>=10.0.0
+numpy>=1.24.0
