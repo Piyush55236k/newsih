@@ -24,13 +24,26 @@ export default function App() {
 	// Close mobile menu when clicking outside
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
-			if (mobileMenuOpen && !(event.target as Element).closest('.sidebar')) {
+			const target = event.target as Element
+			if (mobileMenuOpen && 
+				!target.closest('.sidebar') && 
+				!target.closest('.mobile-menu-toggle')) {
 				setMobileMenuOpen(false)
 			}
 		}
 		
-		document.addEventListener('mousedown', handleClickOutside)
-		return () => document.removeEventListener('mousedown', handleClickOutside)
+		if (mobileMenuOpen) {
+			document.addEventListener('mousedown', handleClickOutside)
+			// Prevent body scroll when menu is open
+			document.body.style.overflow = 'hidden'
+		} else {
+			document.body.style.overflow = 'unset'
+		}
+		
+		return () => {
+			document.removeEventListener('mousedown', handleClickOutside)
+			document.body.style.overflow = 'unset'
+		}
 	}, [mobileMenuOpen])
 
 	return (
@@ -43,6 +56,12 @@ export default function App() {
 			>
 				{mobileMenuOpen ? '✕' : '☰'}
 			</button>
+			
+			{/* Mobile Backdrop */}
+			<div 
+				className={`mobile-backdrop ${mobileMenuOpen ? 'show' : ''}`}
+				onClick={() => setMobileMenuOpen(false)}
+			></div>
 			
 			<aside className={`sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`}>
 				<h1>AgriAssist</h1>
