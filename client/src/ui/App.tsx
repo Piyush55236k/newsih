@@ -90,7 +90,7 @@ export default function App() {
 					<NavLink to="/community" label="Community" icon="👥" />
 					<NavLink to="/quests" label="Quests" icon="🎯" />
 					<NavLink to="/feedback" label="Feedback" icon="💬" />
-					<NavLink to="/admin" label="Admin" icon="🛠️" />
+					{/* Admin link hidden from navigation; route still exists */}
 				</nav>
 				<footer>
 					<small>v0.1 • Agricultural Assistant Demo</small>

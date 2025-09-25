@@ -1,5 +1,7 @@
 {
   "version": 2,
+  "installCommand": "npm install --include=dev",
+  "buildCommand": "npm run build",
   "builds": [
     { "src": "api/**/*.py", "use": "@vercel/python" },
     { "src": "package.json", "use": "@vercel/static-build", "config": { "distDir": "dist" } }

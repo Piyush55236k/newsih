@@ -37,7 +37,8 @@ export async function getEvidenceStatus(profileId: string) {
 
 export async function adminList(params: { status?: EvidenceStatus | 'all' } = {}) {
   const url = `${base()}/api/review/admin/evidence${params.status ? `?status=${params.status}` : ''}`
-  const r = await fetch(url, { headers: { 'X-Admin-Key': (import.meta as any).env?.VITE_ADMIN_KEY || '' } })
+  const pwd = (typeof window !== 'undefined' && window.sessionStorage ? sessionStorage.getItem('adminPassword') : null) || (import.meta as any).env?.VITE_ADMIN_KEY || ''
+  const r = await fetch(url, { headers: { 'X-Admin-Key': pwd } })
   if (!r.ok) {
     const ct = r.headers.get('content-type') || ''
     if (ct.includes('application/json')) {
@@ -52,7 +53,8 @@ export async function adminList(params: { status?: EvidenceStatus | 'all' } = {}
 
 export async function adminDecision(args: { id: string; decision: EvidenceStatus; reward?: number }) {
   const url = `${base()}/api/review/admin/evidence/decision`
-  const r = await fetch(url, { method:'POST', headers:{ 'Content-Type':'application/json', 'X-Admin-Key': (import.meta as any).env?.VITE_ADMIN_KEY || '' }, body: JSON.stringify(args) })
+  const pwd = (typeof window !== 'undefined' && window.sessionStorage ? sessionStorage.getItem('adminPassword') : null) || (import.meta as any).env?.VITE_ADMIN_KEY || ''
+  const r = await fetch(url, { method:'POST', headers:{ 'Content-Type':'application/json', 'X-Admin-Key': pwd }, body: JSON.stringify(args) })
   if (!r.ok) {
     const ct = r.headers.get('content-type') || ''
     if (ct.includes('application/json')) {
