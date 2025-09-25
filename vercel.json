@@ -18,11 +18,8 @@
       ]
     }
   ],
-  "routes": [
-    { "src": "/api/model/(.*)", "dest": "/api/model.py" },
-    { "src": "/api/disease/(.*)", "dest": "/api/disease.py" },
-    { "src": "/api/health", "dest": "/api/model.py" },
-    { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/index.html" }
+  "rewrites": [
+    { "source": "/api/:match*", "destination": "/api/:match*" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
