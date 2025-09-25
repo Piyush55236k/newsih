@@ -35,6 +35,8 @@ export default function Quests(){
 	const [verified, setVerified] = useState<Set<string>>(()=> getVerifiedSet(DEFAULT_RULES))
 	const [evidenceByQuest, setEvidenceByQuest] = useState<Record<string, { status: EvidenceStatus; id: string; imageUrl?: string }>>({})
 	const [uploading, setUploading] = useState<Record<string, boolean>>({})
+	const [selectedFile, setSelectedFile] = useState<Record<string, File|undefined>>({})
+	const [uploadErr, setUploadErr] = useState<Record<string, string|undefined>>({})
 
 	useEffect(()=>{
 		const onEv = () => setVerified(new Set(getVerifiedSet(DEFAULT_RULES)))
@@ -74,14 +76,16 @@ export default function Quests(){
 	const onUpload = async (q: Quest, file: File) => {
 		const reader = new FileReader()
 		setUploading(s=>({ ...s, [q.id]: true }))
+		setUploadErr(s=>({ ...s, [q.id]: undefined }))
 		reader.onload = async () => {
 			try {
 				const pid = getProfile().id
 				await submitEvidence({ profileId: pid, questId: q.id, imageData: String(reader.result) })
 				const r = await getEvidenceStatus(pid)
 				setEvidenceByQuest(r.byQuest || {})
+				setSelectedFile(s=>({ ...s, [q.id]: undefined }))
 			} catch (e:any) {
-				alert(String(e?.message||e))
+				setUploadErr(s=>({ ...s, [q.id]: String(e?.message||e) }))
 			} finally {
 				setUploading(s=>({ ...s, [q.id]: false }))
 			}
@@ -121,20 +125,20 @@ export default function Quests(){
 								<h3 style={{marginBottom:0}}>{q.title}</h3>
 								<span className="tag warning">+{q.reward} pts</span>
 							</div>
-											<div className="progress" aria-label="quest progress" title={`${pct}%`}>
+							<div className="progress" aria-label="quest progress" title={`${pct}%`}>
 								<div className="progress-bar" style={{width: `${pct}%`}}></div>
 							</div>
-											<div className="muted" style={{fontSize:12, marginTop:4}}>{doneCount}/{q.steps.length} steps</div>
+							<div className="muted" style={{fontSize:12, marginTop:4}}>{doneCount}/{q.steps.length} steps</div>
 							<ul className="quest-steps">
 								{q.steps.map((s, i)=> {
 									const auto = isStepAutoVerified(q.id, i)
 									const checked = auto || !!state.done[`${q.id}:${i}`]
 									return (
 										<li key={i}>
-											<label style={{display:'flex', alignItems:'center', gap:10}} title={auto ? 'Verified from activity' : 'Mark done'}>
-												<input type="checkbox" checked={checked} onChange={()=>!auto && toggle(q.id, i)} disabled={auto} />
+											<div style={{display:'flex', alignItems:'center', gap:10, cursor: auto ? 'default' : 'pointer'}} onClick={()=> !auto && toggle(q.id, i)} title={auto ? 'Verified from activity' : 'Tap to mark done'}>
+												<span className={`step-dot ${checked?'on':''} ${auto?'auto':''}`} aria-hidden="true" />
 												<span>{s}{auto && ' • auto-verified'}</span>
-											</label>
+											</div>
 										</li>
 									)
 								})}
@@ -142,8 +146,14 @@ export default function Quests(){
 							<div style={{display:'flex', flexDirection:'column', gap:8, marginTop:12}}>
 								<div className="row" style={{alignItems:'center'}}>
 									<div className="col">
-										<label className="muted" style={{marginBottom:6}}>Upload evidence (image/screenshot)</label>
-										<input type="file" accept="image/*" onChange={e=>{ const f=e.target.files?.[0]; if (f) onUpload(q, f) }} disabled={uploading[q.id]} />
+										<label className="muted" style={{marginBottom:6}}>Evidence (image/screenshot)</label>
+										<div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
+											<input id={`file-${q.id}`} type="file" accept="image/*" style={{display:'none'}} onChange={e=>{ const f=e.target.files?.[0]; setSelectedFile(s=>({ ...s, [q.id]: f })) }} />
+											<button type="button" className="secondary" onClick={()=> document.getElementById(`file-${q.id}`)?.click()} disabled={uploading[q.id]}>Choose Image</button>
+											<button type="button" onClick={()=>{ const f=selectedFile[q.id]; if (f) onUpload(q, f) }} disabled={!selectedFile[q.id] || !!uploading[q.id]}>Upload Evidence</button>
+											{selectedFile[q.id] && <span className="muted">{selectedFile[q.id]?.name}</span>}
+										</div>
+										{uploadErr[q.id] && <div className="text-danger" style={{marginTop:6}}>{uploadErr[q.id]}</div>}
 									</div>
 									<div className="col" style={{textAlign:'right'}}>
 										{statusFor(q.id) && <span className={`tag ${statusFor(q.id)==='approved'?'success':statusFor(q.id)==='rejected'?'danger':'warning'}`}>Review: {statusFor(q.id)}</span>}

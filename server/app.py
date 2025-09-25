@@ -1,15 +1,18 @@
 import os
+from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from datetime import datetime
 from supabase import create_client, Client
 import base64
 
+# IMPORTANT: Load environment variables BEFORE reading them
+load_dotenv()
+
 APP_URL = os.getenv('SUPABASE_URL')
 SERVICE_KEY = os.getenv('SUPABASE_SERVICE_KEY') or os.getenv('SUPABASE_SERVICE_ROLE')
 ADMIN_KEY = os.getenv('ADMIN_KEY')
 BUCKET = os.getenv('EVIDENCE_BUCKET', 'evidence')
-
 app = Flask(__name__)
 CORS(app, resources={r"/api/review/*": {"origins": "*"}})
 
@@ -17,6 +20,8 @@ if not APP_URL or not SERVICE_KEY:
     print('[server] Warning: SUPABASE_URL or SUPABASE_SERVICE_KEY missing; admin/review endpoints will fail')
 
 def supa() -> Client:
+    if not APP_URL or not SERVICE_KEY:
+        raise RuntimeError('Server not configured: set SUPABASE_URL and SUPABASE_SERVICE_KEY in environment/.env')
     return create_client(APP_URL, SERVICE_KEY)
 
 def require_admin(req):
