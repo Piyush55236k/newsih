@@ -823,3 +823,36 @@ img {
 .fade-in-delay-3 {
   animation: fadeIn 0.5s ease-out 0.3s both;
 }
+
+/* Toasts */
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 2000;
+}
+.toast {
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  box-shadow: var(--shadow-md);
+}
+.toast.success { border-color: var(--green-300); }
+.toast.error { border-color: var(--red-500); color: var(--red-700); }
+.toast.info { border-color: var(--blue-100); }
+.toast.warning { border-color: var(--yellow-500); }
+
+/* Modal */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1500;
+}
+.modal {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg); padding: 20px; z-index: 1600; width: min(520px, 90vw);
+}

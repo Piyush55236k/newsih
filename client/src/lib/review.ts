@@ -66,3 +66,18 @@ export async function adminDecision(args: { id: string; decision: EvidenceStatus
   }
   return r.json()
 }
+
+export async function adminDelete(args: { id: string }) {
+  const url = `${base()}/api/review/admin/evidence/delete`
+  const pwd = (typeof window !== 'undefined' && window.sessionStorage ? sessionStorage.getItem('adminPassword') : null) || (import.meta as any).env?.VITE_ADMIN_KEY || ''
+  const r = await fetch(url, { method:'POST', headers:{ 'Content-Type':'application/json', 'X-Admin-Key': pwd }, body: JSON.stringify(args) })
+  if (!r.ok) {
+    const ct = r.headers.get('content-type') || ''
+    if (ct.includes('application/json')) {
+      throw new Error((await r.json().catch(()=>null))?.error || `Delete failed (${r.status})`)
+    } else {
+      const txt = await r.text().catch(()=> ''); throw new Error(txt || `Delete failed (${r.status})`)
+    }
+  }
+  return r.json()
+}

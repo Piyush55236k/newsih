@@ -54,6 +54,16 @@ def upload_data_url(client: Client, data_url: str, path: str) -> str:
     pub = client.storage.from_(BUCKET).get_public_url(path)
     return pub
 
+def storage_path_from_public_url(url: str) -> str | None:
+    # public url looks like: https://<proj>.supabase.co/storage/v1/object/public/<bucket>/<path>
+    try:
+        marker = f"/storage/v1/object/public/{BUCKET}/"
+        if marker in url:
+            return url.split(marker, 1)[1]
+    except Exception:
+        pass
+    return None
+
 @app.get('/api/review/health')
 def health():
     return jsonify({ 'ok': True, 'time': datetime.utcnow().isoformat() + 'Z' })
@@ -70,6 +80,10 @@ def submit_evidence():
         if not profile_id or not quest_id:
             return jsonify({ 'error': 'profileId and questId required' }), 400
         client = supa()
+        # Duplicate prevention: do not allow new submission if an active one exists
+        existing = client.table('quest_evidence').select('id,status').eq('profile_id', profile_id).eq('quest_id', quest_id).in_('status', ['pending','approved']).limit(1).execute()
+        if existing.data:
+            return jsonify({ 'error': 'An active submission already exists for this quest.' }), 409
         if image_data and not image_url:
             path = f"{profile_id}/{int(datetime.utcnow().timestamp())}_{quest_id}.jpg"
             image_url = upload_data_url(client, image_data, path)
@@ -127,9 +141,9 @@ def admin_decide():
     try:
         payload = request.get_json(force=True)
         evid_id = payload.get('id')
-        decision = payload.get('decision')  # 'approved' | 'rejected'
+        decision = payload.get('decision')  # 'approved' | 'rejected' | 'pending'
         # reward is not applied server-side to avoid double counting; client will claim points after approval
-        if not evid_id or decision not in ('approved','rejected'):
+        if not evid_id or decision not in ('approved','rejected','pending'):
             return jsonify({ 'error': 'id and decision required' }), 400
         client = supa()
         # Update evidence row
@@ -137,6 +151,39 @@ def admin_decide():
             'status': decision,
             'decided_at': datetime.utcnow().isoformat() + 'Z'
         }).eq('id', evid_id).execute()
+        return jsonify({ 'ok': True })
+    except Exception as e:
+        return jsonify({ 'error': str(e) }), 500
+
+@app.post('/api/review/admin/evidence/delete')
+def admin_delete():
+    if not require_admin(request):
+        return jsonify({ 'error': 'unauthorized' }), 401
+    try:
+        payload = request.get_json(force=True)
+        evid_id = payload.get('id')
+        if not evid_id:
+            return jsonify({ 'error': 'id required' }), 400
+        client = supa()
+        # fetch record first to know image path
+        rec = client.table('quest_evidence').select('*').eq('id', evid_id).maybe_single().execute()
+        image_url = None
+        try:
+            data_obj = rec.data if isinstance(rec, object) else None
+            if isinstance(data_obj, dict):
+                image_url = data_obj.get('image_url')
+        except Exception:
+            pass
+        # delete row
+        client.table('quest_evidence').delete().eq('id', evid_id).execute()
+        # attempt to remove file if exists
+        if image_url:
+            rel = storage_path_from_public_url(str(image_url))
+            if rel:
+                try:
+                    client.storage.from_(BUCKET).remove([rel])
+                except Exception:
+                    pass
         return jsonify({ 'ok': True })
     except Exception as e:
         return jsonify({ 'error': str(e) }), 500

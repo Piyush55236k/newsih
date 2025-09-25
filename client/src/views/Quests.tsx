@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { trackEvent, getVerifiedSet, DEFAULT_RULES } from '../lib/analytics'
 import { getEvidenceStatus, submitEvidence, type EvidenceStatus } from '../lib/review'
+import { showToast } from '../ui/Toast'
 import { ensureOnlineSyncListener, getProfile, markQuestComplete } from '../lib/profile'
 import { QUESTS } from '../lib/quests'
 
@@ -53,7 +54,19 @@ export default function Quests(){
 			try { const r = await getEvidenceStatus(pid); setEvidenceByQuest(r.byQuest || {}) } catch {}
 		}
 		run()
+		// Re-check when tab gains focus
+		const onVis = () => { if (document.visibilityState === 'visible') run() }
+		document.addEventListener('visibilitychange', onVis)
+		return ()=> document.removeEventListener('visibilitychange', onVis)
 	}, [])
+
+	const [refreshing, setRefreshing] = useState(false)
+	const refreshStatus = async () => {
+		setRefreshing(true)
+		try { const pid = getProfile().id; const r = await getEvidenceStatus(pid); setEvidenceByQuest(r.byQuest || {}); showToast('Status refreshed', 'info', 1500) }
+		catch(e:any){ showToast(String(e?.message||e), 'error') }
+		finally { setRefreshing(false) }
+	}
 
 	// Declarative mapping: questId -> stepIndex -> verification id
 	const verifyMap: Record<string, Record<number, string>> = {
@@ -73,7 +86,11 @@ export default function Quests(){
 	const statusFor = (qId: string): EvidenceStatus | undefined => evidenceByQuest[qId]?.status
 	const canClaim = (q: Quest): boolean => isQuestCompleted(q) && statusFor(q.id) === 'approved' && !state.completed[q.id]
 
-	const onUpload = async (q: Quest, file: File) => {
+		const onUpload = async (q: Quest, file: File) => {
+			// Block uploads if quest is already claimed or evidence is already pending/approved
+			const st = statusFor(q.id)
+			if (state.completed[q.id]) { setUploadErr(s=>({ ...s, [q.id]: 'This quest is already completed. Upload not allowed.' })); showToast('Quest already completed. Upload not allowed.', 'warning'); return }
+			if (st === 'pending' || st === 'approved') { setUploadErr(s=>({ ...s, [q.id]: 'Evidence is already submitted for review.' })); showToast('Evidence already submitted for this quest.', 'info'); return }
 		const reader = new FileReader()
 		setUploading(s=>({ ...s, [q.id]: true }))
 		setUploadErr(s=>({ ...s, [q.id]: undefined }))
@@ -84,8 +101,11 @@ export default function Quests(){
 				const r = await getEvidenceStatus(pid)
 				setEvidenceByQuest(r.byQuest || {})
 				setSelectedFile(s=>({ ...s, [q.id]: undefined }))
+					showToast('Evidence uploaded. Awaiting review.', 'success')
 			} catch (e:any) {
-				setUploadErr(s=>({ ...s, [q.id]: String(e?.message||e) }))
+					const msg = String(e?.message||e)
+					setUploadErr(s=>({ ...s, [q.id]: msg }))
+					showToast(msg, 'error')
 			} finally {
 				setUploading(s=>({ ...s, [q.id]: false }))
 			}
@@ -115,6 +135,11 @@ export default function Quests(){
 					<span className="tag info">Total available: {totalPossible}</span>
 				</div>
 			</section>
+			<div style={{display:'flex', justifyContent:'flex-end', marginBottom:8}}>
+				<button className="secondary" onClick={refreshStatus} disabled={refreshing}>
+					{refreshing ? 'Refreshing...' : 'Refresh status'}
+				</button>
+			</div>
 			<div className="quests-grid">
 				{QUESTS.map(q => {
 					const doneCount = q.steps.reduce((acc, _s, i)=> acc + ((isStepAutoVerified(q.id, i) || state.done[`${q.id}:${i}`]) ? 1 : 0), 0)
@@ -150,7 +175,7 @@ export default function Quests(){
 										<div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
 											<input id={`file-${q.id}`} type="file" accept="image/*" style={{display:'none'}} onChange={e=>{ const f=e.target.files?.[0]; setSelectedFile(s=>({ ...s, [q.id]: f })) }} />
 											<button type="button" className="secondary" onClick={()=> document.getElementById(`file-${q.id}`)?.click()} disabled={uploading[q.id]}>Choose Image</button>
-											<button type="button" onClick={()=>{ const f=selectedFile[q.id]; if (f) onUpload(q, f) }} disabled={!selectedFile[q.id] || !!uploading[q.id]}>Upload Evidence</button>
+											<button type="button" onClick={()=>{ const f=selectedFile[q.id]; if (!f) { setUploadErr(s=>({ ...s, [q.id]: 'Please choose an image first.' })); return; } onUpload(q, f) }} disabled={!!uploading[q.id]}>Upload Evidence</button>
 											{selectedFile[q.id] && <span className="muted">{selectedFile[q.id]?.name}</span>}
 										</div>
 										{uploadErr[q.id] && <div className="text-danger" style={{marginTop:6}}>{uploadErr[q.id]}</div>}

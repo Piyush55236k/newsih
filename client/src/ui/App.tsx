@@ -1,6 +1,7 @@
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { ensureProfileBootstrap, getProfile } from '../lib/profile'
+import { ToastHost } from './Toast'
 import { hasSupabase } from '../lib/supabase'
 
 const NavLink = ({ to, label, icon }: { to: string; label: string; icon: string }) => {
@@ -99,6 +100,7 @@ export default function App() {
 			
 			<main className="content">
 				<div className="content-inner">
+					<ToastHost />
 					<div className="fade-in">
 						<Outlet />
 					</div>
