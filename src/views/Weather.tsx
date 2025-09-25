@@ -94,29 +94,203 @@ export default function Weather() {
 	}, [wx])
 
 	return (
-		<div className="grid">
-			<section className="card">
-				<h2>Weather & Alerts</h2>
-				<p className="muted">{region.state ? `${region.state} • ` : ''}Lat {coords.lat.toFixed(3)}, Lon {coords.lon.toFixed(3)}</p>
-				{err && <p className="warning">{err}</p>}
-				{!wx && !err && <p className="muted">Loading weather…</p>}
-				{wx && (
-					<div className="row">
-						<div className="col"><div className="tag">Temp</div><div style={{fontSize:28}}>{wx.temperature.toFixed(1)}°C</div></div>
-						<div className="col"><div className="tag">Wind</div><div style={{fontSize:28}}>{wx.windspeed.toFixed(0)} km/h</div></div>
-						<div className="col"><div className="tag">Precip</div><div style={{fontSize:28}}>{wx.precipitation.toFixed(1)} mm</div></div>
+		<div className="fade-in">
+			<div className="row" style={{gridTemplateColumns: '1fr'}}>
+				<div className="card bg-gradient-blue">
+					<h2>🌤️ Weather & Agricultural Alerts</h2>
+					<p className="muted">
+						{region.state ? `${region.state} • ` : ''}
+						📍 Lat {coords.lat.toFixed(3)}, Lon {coords.lon.toFixed(3)}
+					</p>
+				</div>
+			</div>
+
+			{err && (
+				<div className="row">
+					<div className="card">
+						<div style={{
+							padding: '16px',
+							backgroundColor: 'var(--red-100)',
+							border: '1px solid var(--red-200)',
+							borderRadius: 'var(--radius-md)',
+						}}>
+							<p style={{color: 'var(--red-700)', margin: '0'}}>⚠️ Weather Error: {err}</p>
+						</div>
 					</div>
-				)}
-			</section>
-			<section className="card">
-				<h3>Predictive Insights</h3>
-				{alerts.length === 0 && <p className="ok">No critical alerts. Conditions look favorable.</p>}
-				{alerts.length > 0 && (
-					<ul>
-						{alerts.map((a,i)=>(<li key={i}>{a}</li>))}
-					</ul>
-				)}
-			</section>
+				</div>
+			)}
+
+			{!wx && !err && (
+				<div className="row">
+					<div className="card text-center">
+						<div className="loading" style={{margin: '0 auto 16px'}}></div>
+						<p className="muted">Loading weather data...</p>
+					</div>
+				</div>
+			)}
+
+			{wx && (
+				<>
+					<div className="row grid-3">
+						<div className="card card-interactive fade-in-delay-1" style={{textAlign: 'center'}}>
+							<div style={{fontSize: '48px', marginBottom: '12px'}}>🌡️</div>
+							<div className="tag info" style={{marginBottom: '12px'}}>Temperature</div>
+							<div style={{
+								fontSize: '36px', 
+								fontWeight: '700', 
+								color: 'var(--green-600)',
+								marginBottom: '8px'
+							}}>
+								{wx.temperature.toFixed(1)}°C
+							</div>
+							<p className="muted">Current temperature</p>
+						</div>
+
+						<div className="card card-interactive fade-in-delay-2" style={{textAlign: 'center'}}>
+							<div style={{fontSize: '48px', marginBottom: '12px'}}>💨</div>
+							<div className="tag info" style={{marginBottom: '12px'}}>Wind Speed</div>
+							<div style={{
+								fontSize: '36px', 
+								fontWeight: '700', 
+								color: 'var(--blue-500)',
+								marginBottom: '8px'
+							}}>
+								{wx.windspeed.toFixed(0)} km/h
+							</div>
+							<p className="muted">Wind conditions</p>
+						</div>
+
+						<div className="card card-interactive fade-in-delay-3" style={{textAlign: 'center'}}>
+							<div style={{fontSize: '48px', marginBottom: '12px'}}>🌧️</div>
+							<div className="tag info" style={{marginBottom: '12px'}}>Precipitation</div>
+							<div style={{
+								fontSize: '36px', 
+								fontWeight: '700', 
+								color: 'var(--blue-600)',
+								marginBottom: '8px'
+							}}>
+								{wx.precipitation.toFixed(1)} mm
+							</div>
+							<p className="muted">Current rainfall</p>
+						</div>
+					</div>
+
+					<div className="row">
+						<div className="card fade-in-delay-1">
+							<h3>🚨 Agricultural Alerts & Recommendations</h3>
+							{alerts.length === 0 && (
+								<div style={{
+									padding: '20px',
+									backgroundColor: 'var(--green-100)',
+									border: '1px solid var(--green-200)',
+									borderRadius: 'var(--radius-md)',
+									textAlign: 'center'
+								}}>
+									<div style={{fontSize: '48px', marginBottom: '12px'}}>✅</div>
+									<p style={{color: 'var(--green-700)', fontWeight: '600', margin: '0'}}>
+										No critical alerts detected
+									</p>
+									<p style={{color: 'var(--green-600)', margin: '8px 0 0'}}>
+										Weather conditions look favorable for farming activities
+									</p>
+								</div>
+							)}
+							{alerts.length > 0 && (
+								<div style={{display: 'flex', flexDirection: 'column', gap: '12px'}}>
+									{alerts.map((alert, index) => (
+										<div key={index} style={{
+											padding: '16px',
+											backgroundColor: 'var(--yellow-100)',
+											border: '1px solid var(--yellow-200)',
+											borderRadius: 'var(--radius-md)',
+											display: 'flex',
+											alignItems: 'flex-start',
+											gap: '12px'
+										}}>
+											<span style={{fontSize: '24px'}}>⚠️</span>
+											<div>
+												<p style={{
+													color: 'var(--yellow-700)',
+													fontWeight: '600',
+													margin: '0 0 4px 0'
+												}}>
+													Weather Alert
+												</p>
+												<p style={{
+													color: 'var(--yellow-600)',
+													margin: '0'
+												}}>
+													{alert}
+												</p>
+											</div>
+										</div>
+									))}
+								</div>
+							)}
+						</div>
+					</div>
+
+					<div className="row">
+						<div className="card fade-in-delay-2">
+							<h3>📊 Weather Summary</h3>
+							<div className="grid-2" style={{gap: '16px'}}>
+								<div style={{
+									padding: '16px',
+									backgroundColor: 'var(--bg-accent)',
+									borderRadius: 'var(--radius-md)',
+									border: '1px solid var(--panel-border)'
+								}}>
+									<h4 style={{color: 'var(--green-600)', marginBottom: '8px'}}>
+										🌡️ Temperature Status
+									</h4>
+									<p className="muted">
+										{wx.temperature < 5 ? '❄️ Cold - Risk of frost damage' :
+										 wx.temperature > 38 ? '🔥 Very Hot - Heat stress risk' :
+										 wx.temperature > 30 ? '☀️ Hot - Monitor irrigation' :
+										 wx.temperature > 15 ? '🌤️ Optimal - Good growing conditions' :
+										 '🌡️ Cool - Slow growth expected'}
+									</p>
+								</div>
+
+								<div style={{
+									padding: '16px',
+									backgroundColor: 'var(--bg-accent)',
+									borderRadius: 'var(--radius-md)',
+									border: '1px solid var(--panel-border)'
+								}}>
+									<h4 style={{color: 'var(--blue-600)', marginBottom: '8px'}}>
+										💨 Wind Conditions
+									</h4>
+									<p className="muted">
+										{wx.windspeed > 30 ? '🌪️ Strong - Avoid spraying' :
+										 wx.windspeed > 15 ? '💨 Moderate - Caution with spraying' :
+										 '🍃 Calm - Good for all activities'}
+									</p>
+								</div>
+							</div>
+							
+							<div style={{
+								marginTop: '16px',
+								padding: '12px',
+								backgroundColor: 'var(--blue-50)',
+								borderRadius: 'var(--radius-sm)',
+								border: '1px solid var(--blue-200)'
+							}}>
+								<p style={{
+									fontSize: '14px',
+									color: 'var(--blue-700)',
+									margin: '0',
+									display: 'flex',
+									alignItems: 'center',
+									gap: '8px'
+								}}>
+									ℹ️ Last updated: {new Date(wx.time).toLocaleString()}
+								</p>
+							</div>
+						</div>
+					</div>
+				</>
+			)}
 		</div>
 	)
 }

@@ -1,36 +1,70 @@
 import { Link, Outlet, useLocation } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 
-const NavLink = ({ to, label }: { to: string; label: string }) => {
+const NavLink = ({ to, label, icon }: { to: string; label: string; icon: string }) => {
 	const loc = useLocation()
 	const active = loc.pathname === to || (to !== '/' && loc.pathname.startsWith(to))
 	return (
 		<Link className={active ? 'nav-link active' : 'nav-link'} to={to}>
+			<span className="nav-icon">{icon}</span>
 			{label}
 		</Link>
 	)
 }
 
 export default function App() {
+	const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+	
+	// Close mobile menu when route changes
+	const location = useLocation()
+	useEffect(() => {
+		setMobileMenuOpen(false)
+	}, [location])
+	
+	// Close mobile menu when clicking outside
+	useEffect(() => {
+		const handleClickOutside = (event: MouseEvent) => {
+			if (mobileMenuOpen && !(event.target as Element).closest('.sidebar')) {
+				setMobileMenuOpen(false)
+			}
+		}
+		
+		document.addEventListener('mousedown', handleClickOutside)
+		return () => document.removeEventListener('mousedown', handleClickOutside)
+	}, [mobileMenuOpen])
+
 	return (
 		<div className="app">
-			<aside className="sidebar">
+			{/* Mobile Menu Toggle */}
+			<button 
+				className="mobile-menu-toggle"
+				onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+				aria-label="Toggle Menu"
+			>
+				{mobileMenuOpen ? '✕' : '☰'}
+			</button>
+			
+			<aside className={`sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`}>
 				<h1>AgriAssist</h1>
 				<nav>
-					<NavLink to="/soil" label="Soil Health" />
-					<NavLink to="/weather" label="Weather" />
-					<NavLink to="/pests" label="Pest Detect" />
-					<NavLink to="/market" label="Market Prices" />
-					<NavLink to="/voice" label="Voice Assist" />
-					<NavLink to="/community" label="Community" />
-					<NavLink to="/quests" label="Quests" />
-					<NavLink to="/feedback" label="Feedback" />
+					<NavLink to="/soil" label="Soil Health" icon="🌱" />
+					<NavLink to="/weather" label="Weather" icon="🌤️" />
+					<NavLink to="/pests" label="Pest Detect" icon="🐛" />
+					<NavLink to="/market" label="Market Prices" icon="💰" />
+					<NavLink to="/voice" label="Voice Assist" icon="🎤" />
+					<NavLink to="/community" label="Community" icon="👥" />
+					<NavLink to="/quests" label="Quests" icon="🎯" />
+					<NavLink to="/feedback" label="Feedback" icon="💬" />
 				</nav>
 				<footer>
-					<small>v0.1 • Demo</small>
+					<small>v0.1 • Agricultural Assistant Demo</small>
 				</footer>
 			</aside>
+			
 			<main className="content">
-				<Outlet />
+				<div className="fade-in">
+					<Outlet />
+				</div>
 			</main>
 		</div>
 	)
