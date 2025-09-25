@@ -112,3 +112,51 @@ export function ensureOnlineSyncListener() {
     window.addEventListener('online', () => { void syncProfile() })
   } catch {}
 }
+
+// Bootstrap from cloud profile if available, merging with local
+let bootstrapped = false
+export async function ensureProfileBootstrap(): Promise<boolean> {
+  if (bootstrapped) return true
+  const supa = getSupabase()
+  if (!supa) return false
+  const local = loadProfile()
+  try {
+    const { data, error } = await supa
+      .from('profiles')
+      .select('id,name,points,quests_completed,updated_at')
+      .eq('id', local.id)
+      .maybeSingle()
+
+    if (error) throw error
+    if (data) {
+      // Merge: max points and union of completed quests; prefer most recent updated_at for name
+      const remotePoints = typeof data.points === 'number' ? data.points : 0
+      const remoteQuestsRaw = (data as any).quests_completed
+      const remoteQuests: string[] = Array.isArray(remoteQuestsRaw)
+        ? remoteQuestsRaw.map(String)
+        : (() => { try { const arr = JSON.parse(String(remoteQuestsRaw)); return Array.isArray(arr) ? arr.map(String) : [] } catch { return [] } })()
+      const merged: Profile = {
+        id: local.id,
+        name: local.name,
+        points: Math.max(local.points || 0, remotePoints || 0),
+        completedQuests: Array.from(new Set([...(local.completedQuests||[]), ...remoteQuests]))
+      }
+      // Choose latest name if remote updated_at is newer
+      try {
+        const lUpd = local.lastSyncAt || 0
+        const rUpd = data.updated_at ? Date.parse(String(data.updated_at)) : 0
+        if (rUpd > lUpd) merged.name = (data as any).name ?? merged.name
+      } catch {}
+      saveProfile(merged)
+      bootstrapped = true
+      return true
+    } else {
+      // No remote row yet: push local up
+      await syncProfile()
+      bootstrapped = true
+      return true
+    }
+  } catch {
+    return false
+  }
+}

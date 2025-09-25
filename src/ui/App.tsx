@@ -1,6 +1,6 @@
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { getProfile } from '../lib/profile'
+import { ensureProfileBootstrap, getProfile } from '../lib/profile'
 import { hasSupabase } from '../lib/supabase'
 
 const NavLink = ({ to, label, icon }: { to: string; label: string; icon: string }) => {
@@ -53,6 +53,8 @@ export default function App() {
 		useEffect(() => {
 			const handler = (e: any) => setPoints(e?.detail?.profile?.points ?? getProfile().points)
 			window.addEventListener('profile:changed', handler)
+				// Bootstrap from cloud if available
+				void ensureProfileBootstrap().then(()=> setPoints(getProfile().points))
 			return () => window.removeEventListener('profile:changed', handler)
 		}, [])
 

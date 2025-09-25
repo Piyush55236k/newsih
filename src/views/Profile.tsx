@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getProfile, syncProfile } from '../lib/profile'
+import { ensureProfileBootstrap, getProfile, syncProfile } from '../lib/profile'
 import { questTitleById } from '../lib/quests'
 
 export default function Profile(){
@@ -14,6 +14,12 @@ export default function Profile(){
       setQuests(e?.detail?.profile?.completedQuests ?? getProfile().completedQuests)
     }
     window.addEventListener('profile:changed', h)
+    // Initial cloud bootstrap
+    void ensureProfileBootstrap().then(()=>{
+      const p = getProfile()
+      setPts(p.points)
+      setQuests(p.completedQuests)
+    })
     return ()=> window.removeEventListener('profile:changed', h)
   }, [])
 
