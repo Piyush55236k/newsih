@@ -97,8 +97,10 @@ export default function App() {
 			</aside>
 			
 			<main className="content">
-				<div className="fade-in">
-					<Outlet />
+				<div className="content-inner">
+					<div className="fade-in">
+						<Outlet />
+					</div>
 				</div>
 			</main>
 		</div>

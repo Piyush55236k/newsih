@@ -75,7 +75,8 @@ body {
 /* Main App Layout */
 .app {
   display: flex;
-  height: 100vh;
+  /* Use min-height so long pages can extend beyond the viewport without creating awkward inner scroll areas */
+  min-height: 100vh;
   position: relative;
 }
 
@@ -231,9 +232,17 @@ body {
 .content {
   flex: 1;
   padding: 32px;
-  overflow-y: auto;
+  /* Allow the page (body) to scroll instead of creating a nested scroller on desktop */
+  overflow: visible;
   position: relative;
   background: var(--bg-primary);
+}
+
+/* Centered max-width container for improved readability on ultra-wide screens */
+.content-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 /* Cards */
@@ -317,6 +326,13 @@ body {
   min-height: 260px;
 }
 
+.quest-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .quest-steps {
   list-style: none;
   padding: 0;
@@ -325,12 +341,23 @@ body {
   gap: 10px;
 }
 
+.quest-steps li {
+  display: flex;
+  align-items: center;
+}
+
 .quest-actions {
   margin-top: auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+
+.quest-actions .btn-claim[disabled], .quest-actions button[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+  filter: grayscale(0.2);
 }
 
 .progress {
@@ -409,6 +436,11 @@ input, select, textarea {
   border-radius: var(--radius-md);
   font-size: 16px;
   transition: var(--transition);
+}
+
+/* Make checkboxes and radios match the green theme */
+input[type="checkbox"], input[type="radio"] {
+  accent-color: var(--green-600);
 }
 
 input:focus, select:focus, textarea:focus {
@@ -565,6 +597,7 @@ img {
     padding: 80px 16px 16px;
     margin-left: 0;
     flex: 1;
+    /* On small screens keep inner scrolling to avoid the fixed sidebar pushing content */
     overflow-y: auto;
     min-height: calc(100vh - 80px);
   }
