@@ -14,7 +14,16 @@ import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+# Enable CORS for all routes and all responses, including errors
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+
+# Ensure CORS headers are present on all error responses
+@app.after_request
+def add_cors_headers(response):
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization"
+    return response
 
 # Configure Flask app
 app.config['DEBUG'] = True
