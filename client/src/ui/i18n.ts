@@ -81,13 +81,23 @@ export async function applyLanguage(lang: string) {
   if (lang === _lastLang) return
   _pending = true
   if (lang === 'en') {
-    // Reliable revert: clear cookies across scopes and hard reload
-    deleteCookieAllScopes('googtrans')
-    _lastLang = 'en'
-    _pending = false
-    _queuedLang = null
-    window.location.reload()
-    return
+    // Prevent endless reload loop: only reload once per session
+    if (!sessionStorage.getItem('langReloaded')) {
+      deleteCookieAllScopes('googtrans')
+      sessionStorage.setItem('langReloaded', '1')
+      _lastLang = 'en'
+      _pending = false
+      _queuedLang = null
+      window.location.reload()
+      return
+    } else {
+      // Already reloaded once, do not reload again
+      sessionStorage.removeItem('langReloaded')
+      _lastLang = 'en'
+      _pending = false
+      _queuedLang = null
+      return
+    }
   }
   // Try programmatic change via the widget's combo
   await loadGoogleTranslate()
