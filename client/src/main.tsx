@@ -12,6 +12,7 @@ import Community from './views/Community'
 import Quests from './views/Quests'
 import Profile from './views/Profile'
 import Admin from './views/Admin'
+import CropAdvisory from './views/CropAdvisory'
 import './ui/styles.css'
 
 const router = createBrowserRouter([
@@ -29,6 +30,7 @@ const router = createBrowserRouter([
 			{ path: 'feedback', element: <Feedback /> },
 			{ path: 'community', element: <Community /> },
 			{ path: 'quests', element: <Quests /> }
+			,{ path: 'advisory', element: <CropAdvisory /> }
 			,{ path: 'admin', element: <Admin /> }
 		]
 	}

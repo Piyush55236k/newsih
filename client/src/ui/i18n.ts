@@ -59,12 +59,36 @@ function setCookie(name: string, value: string) {
   document.cookie = `${name}=${value}; expires=${expires}; path=/; domain=${domain}`
 }
 
+function deleteCookieAllScopes(name: string) {
+  const host = window.location.hostname
+  const expires = 'Thu, 01 Jan 1970 00:00:00 GMT'
+  // no domain
+  document.cookie = `${name}=; expires=${expires}; path=/`
+  // exact domain
+  document.cookie = `${name}=; expires=${expires}; path=/; domain=${host}`
+  // dot domain (if applicable)
+  if (!/^\d+\.\d+\.\d+\.\d+$/.test(host) && host.includes('.')) {
+    document.cookie = `${name}=; expires=${expires}; path=/; domain=.${host}`
+  }
+}
+
 let _lastLang = ''
 let _pending = false
+let _queuedLang: string | null = null
 export async function applyLanguage(lang: string) {
-  if (!lang || lang === 'en') { _lastLang = 'en'; return }
-  if (_pending) return
+  if (!lang) lang = 'en'
+  if (_pending) { _queuedLang = lang; return }
+  if (lang === _lastLang) return
   _pending = true
+  if (lang === 'en') {
+    // Reliable revert: clear cookies across scopes and hard reload
+    deleteCookieAllScopes('googtrans')
+    _lastLang = 'en'
+    _pending = false
+    _queuedLang = null
+    window.location.reload()
+    return
+  }
   // Try programmatic change via the widget's combo
   await loadGoogleTranslate()
   const tries = 50
@@ -75,6 +99,8 @@ export async function applyLanguage(lang: string) {
       combo.dispatchEvent(new Event('change'))
       _lastLang = lang
       _pending = false
+      const next = _queuedLang; _queuedLang = null
+      if (next && next !== _lastLang) return applyLanguage(next)
       return
     }
     await new Promise(r => setTimeout(r, 100))

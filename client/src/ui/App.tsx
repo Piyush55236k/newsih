@@ -92,6 +92,7 @@ export default function App() {
 					<NavLink to="/weather" label="Weather" icon="🌤️" />
 					<NavLink to="/pests" label="Pest Detect" icon="🐛" />
 					<NavLink to="/market" label="Market Prices" icon="💰" />
+					<NavLink to="/advisory" label="Crop Advisory" icon="🌾" />
 					<NavLink to="/voice" label="Voice Assist" icon="🎤" />
 					<NavLink to="/community" label="Community" icon="👥" />
 					<NavLink to="/quests" label="Quests" icon="🎯" />
@@ -103,15 +104,14 @@ export default function App() {
 						<label style={{fontSize:12}} className="muted">Language</label>
 						<select
 							value={lang}
-							onChange={async (e)=>{
+							onChange={(e)=>{
 								const v = e.target.value
 								setLang(v)
 								localStorage.setItem('preferredLanguage', v)
-								// Debounce quick toggles
-								let timer = (window as any).__langTimer as number | undefined
-								if (timer) window.clearTimeout(timer)
-								;(window as any).__langTimer = window.setTimeout(async ()=>{
-									try { await applyLanguage(v) } catch {}
+								// Debounce quick toggles using a stable window timer
+								if ((window as any).__langTimer) window.clearTimeout((window as any).__langTimer)
+								;(window as any).__langTimer = window.setTimeout(()=>{
+									void applyLanguage(v)
 								}, 200)
 							}}
 						>
