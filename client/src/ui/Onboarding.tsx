@@ -13,8 +13,8 @@ export default function Onboarding() {
   // If a preferred language exists, ensure the widget loads and apply it quickly
   useEffect(() => {
     const pref = localStorage.getItem('preferredLanguage')
-    if (pref && pref !== 'en') {
-      // Fire and forget; don't block UI
+    if (pref) {
+      // Always apply the language, even for English, to ensure onboarding logic is consistent
       void applyLanguage(pref)
     } else {
       void loadGoogleTranslate()
