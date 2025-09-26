@@ -39,7 +39,7 @@ export type AdvisoryResponse = {
   error?: string
 }
 
-const API_BASE = 'https://sih-demo-djwa.onrender.com'
+const API_BASE = 'https://cropadvisory.onrender.com'
 
 export async function fetchCropAdvisory(body: AdvisoryRequest): Promise<AdvisoryResponse> {
   const base = API_BASE.replace(/\/$/, '')
