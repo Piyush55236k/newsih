@@ -1,3 +1,2 @@
 # fertilizer-rec.py Flask API requirements
-python>=3.7
 flask
