@@ -91,25 +91,15 @@ export default function SoilHealth() {
 					crop: String(form.crop || '').toLowerCase(),
 					inputs: { N: n, P: p, K: k, pH: ph, EC: ec }
 				}
-				// Try configured base first; if it fails, fall back to serverless function path
-				const tryUrls: string[] = []
-				if (base) tryUrls.push(`${base}/recommend`)
-				tryUrls.push(`/api/model/recommend`)
+				// Only use the correct API endpoint
 				let r: Response | null = null
 				let lastErr: any = null
-				for (const url of tryUrls){
-					try{
-						r = await fetch(url, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) })
-						if (r.ok) { break }
-						// If 404 or non-OK, try next URL
-						lastErr = new Error(`Request failed (${r.status}) at ${url}`)
-					} catch (err:any) {
-						lastErr = err
-					}
-				}
-				if (!r) {
+				try {
+					r = await fetch(`${base}/recommend`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) })
+					if (!r.ok) throw new Error(`Request failed (${r.status}) at ${base}/recommend`)
+				} catch (err:any) {
 					setApiStatus('offline')
-					throw new Error(lastErr?.message || 'Cannot reach AI API')
+					throw new Error(err?.message || 'Cannot reach AI API')
 				}
 				let resp: any | null = null
 				try{ resp = await r.json() } catch { /* ignore */ }
