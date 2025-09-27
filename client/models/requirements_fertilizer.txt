@@ -1,2 +1,3 @@
 # fertilizer-rec.py Flask API requirements
 flask
+flask-cors

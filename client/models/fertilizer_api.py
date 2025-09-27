@@ -1,7 +1,9 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from fertilizer_rec import fertilizer_recommendation
 
 app = Flask(__name__)
+CORS(app, origins="*")
 
 @app.route('/fertilizer', methods=['POST'])
 def recommend():

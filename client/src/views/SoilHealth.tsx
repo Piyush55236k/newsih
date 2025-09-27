@@ -22,8 +22,7 @@ export default function SoilHealth() {
 	const update = (k: keyof SoilForm, v: any) => setForm(s => ({ ...s, [k]: v }))
 
 		function apiBase(){
-			const env: any = (import.meta as any).env || {}
-			return (env.VITE_SIH_API_URL as string) || ''
+			return 'https://fertilizer-5hx9.onrender.com';
 		}
 
 		async function pingApi(){
