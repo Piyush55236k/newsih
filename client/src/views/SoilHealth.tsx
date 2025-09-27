@@ -84,12 +84,29 @@ export default function SoilHealth() {
 		async function runAI(){
 			setAi(null); setAiError(null); setAiLoading(true)
 			try{
+				// Collect all required soil fields
 				const ph = Number(form.ph), n = Number(form.nitrogen), p = Number(form.phosphorus), k = Number(form.potassium), ec = Number(form.ec)
+				// Add extra fields for micronutrients and OC
+				// For demo, set default values if not present (ideally, add these to the form)
+				const S = 10, Zn = 0.6, Fe = 4.5, Cu = 0.2, Mn = 1.5, B = 0.5, OC = 0.5;
 				if ([ph,n,p,k,ec].some(Number.isNaN)) throw new Error('Fill all fields (including EC) before running AI')
 				const base = apiBase().replace(/\/$/, '')
 				const payload = {
 					crop: String(form.crop || '').toLowerCase(),
-					inputs: { N: n, P: p, K: k, pH: ph, EC: ec }
+					soil: {
+						N: n,
+						P: p,
+						K: k,
+						S,
+						Zn,
+						Fe,
+						Cu,
+						Mn,
+						B,
+						OC,
+						pH: ph,
+						EC: ec
+					}
 				}
 				// Only use the correct API endpoint
 				let r: Response | null = null
