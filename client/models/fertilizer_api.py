@@ -6,9 +6,8 @@ app = Flask(__name__)
 CORS(app, origins=["https://newsih-gtmo.vercel.app", "http://localhost:5173"], supports_credentials=True, methods=["GET", "POST", "OPTIONS"])
 
 
-# Explicitly handle OPTIONS for CORS preflight
-@app.route('/fertilizer', methods=['OPTIONS', 'POST'])
-@cross_origin(origins=["httpsih-gtmo.vercel.app", "http://localhost:5173"], methods=["POST", "OPTIONS"], allow_headers=["Content-Type"])
+@app.route('/recommend', methods=['OPTIONS', 'POST'])
+@cross_origin(origins=["https://newsih-gtmo.vercel.app", "http://localhost:5173"], methods=["POST", "OPTIONS"], allow_headers=["Content-Type"])
 def recommend():
     if request.method == 'OPTIONS':
         return '', 200
