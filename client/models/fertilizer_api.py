@@ -1,12 +1,17 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 from fertilizer_rec import fertilizer_recommendation
 
 app = Flask(__name__)
-CORS(app, origins="*")
+CORS(app, origins=["https://newsih-gtmo.vercel.app", "http://localhost:5173"], supports_credentials=True, methods=["GET", "POST", "OPTIONS"])
 
-@app.route('/fertilizer', methods=['POST'])
+
+# Explicitly handle OPTIONS for CORS preflight
+@app.route('/fertilizer', methods=['OPTIONS', 'POST'])
+@cross_origin(origins=["httpsih-gtmo.vercel.app", "http://localhost:5173"], methods=["POST", "OPTIONS"], allow_headers=["Content-Type"])
 def recommend():
+    if request.method == 'OPTIONS':
+        return '', 200
     data = request.json
     crop = data.get('crop')
     soil = data.get('soil')
