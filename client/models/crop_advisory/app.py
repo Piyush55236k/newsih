@@ -9,55 +9,6 @@ import math
 import os
 import time
 recent_errors = []
-
-# Debug route to view recent errors
-@app.route('/debug', methods=['GET'])
-def debug():
-    return jsonify({"recent_errors": recent_errors})
-                data = future.result(timeout=5)  # Individual timeout
-                if data and isinstance(data, dict):
-                    weather_sources.append(data)
-                    print(f"✅ {api_name} completed successfully")
-                else:
-                    print(f"⚠️ {api_name} returned invalid data")
-            except Exception as e:
-                print(f"⚠️ {api_name} failed: {e}")
-    
-    # Process results
-    # Ensure weather_sources is always a valid list
-    weather_sources = weather_sources if weather_sources and isinstance(weather_sources, list) else []
-    if weather_sources:
-        print(f"✅ Weather data collected from {len(weather_sources)} source(s)")
-        combined = combine_weather_data(weather_sources)
-        today = datetime.today().strftime("%Y-%m-%d")
-        season = detect_season(date or today, combined['rainfall'], combined['temp'])
-        combined['season'] = season
-        
-        # Add quality indicators
-        combined['source_count'] = len(weather_sources)
-        combined['reliability'] = 'high' if len(weather_sources) >= 2 else 'medium'
-        
-        # Cache the result
-        weather_cache[cache_key] = (combined, time.time())
-        
-        return combined
-    else:
-        print("⚠️ All weather APIs failed, using geographic fallback")
-        fallback_data = get_fallback_weather(lat, lon, date)
-        fallback_data['reliability'] = 'low'
-        fallback_data['source_count'] = 0
-        return fallback_data
-
-# ---------------- Soil APIs and related helpers -----------------
-def get_soilgrids_data(lat, lon):
-    """Enhanced SoilGrids API with concurrent property fetching"""
-    try:
-        properties = ['clay', 'sand', 'silt']
-        soil_data = {}
-        
-        # Concurrent API calls for all soil properties
-        with ThreadPoolExecutor(max_workers=3, thread_name_prefix="soil_api") as executor:
-            future_to_prop = {}
             
             for prop in properties:
                 url = "https://rest.isric.org/soilgrids/v2.0/properties/query"
