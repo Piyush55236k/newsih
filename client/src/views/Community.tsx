@@ -82,7 +82,7 @@ export default function Community() {
 				<MotionTextarea
 					rows={4}
 					value={content}
-					onChange={e=>setContent(e.target.value)}
+					onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setContent(e.target.value)}
 					placeholder="How to manage blight after rain?"
 					initial={{ opacity: 0 }}
 					animate={{ opacity: 1 }}

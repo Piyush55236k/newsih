@@ -170,7 +170,7 @@ export default function FloatingVoiceAssistant() {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.8, opacity: 0, y: 50 }}
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
             >
               <div className="voice-assistant-header">
                 <h3>🎤 Voice Assistant</h3>
