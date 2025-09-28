@@ -5,6 +5,7 @@ import { ensureProfileBootstrap, getProfile } from '../lib/profile';
 import { ToastHost } from './Toast';
 import Onboarding from './Onboarding';
 import Header from './Header';
+import FloatingVoiceAssistant from './FloatingVoiceAssistant';
 
 export default function App() {
   const [points, setPoints] = useState<number>(() => getProfile().points);
@@ -44,6 +45,7 @@ export default function App() {
       <Suspense fallback={<div className="loading">Loading…</div>}>
         <Onboarding />
       </Suspense>
+      <FloatingVoiceAssistant />
     </div>
   );
 }

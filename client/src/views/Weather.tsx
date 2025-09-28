@@ -77,156 +77,179 @@ export default function Weather() {
 	}, [wx])
 
 	return (
-		<div className="fade-in">
-			<div className="row" style={{gridTemplateColumns: '1fr'}}>
-				<div className="card bg-gradient-blue">
+		<motion.div 
+			className="weather-container"
+			initial={{ opacity: 0, y: 20 }}
+			animate={{ opacity: 1, y: 0 }}
+			transition={{ duration: 0.6 }}
+		>
+			<motion.div 
+				className="card weather-header bg-gradient-blue"
+				initial={{ scale: 0.95, opacity: 0 }}
+				animate={{ scale: 1, opacity: 1 }}
+				transition={{ duration: 0.5, delay: 0.1 }}
+			>
+				<div className="weather-title">
 					<h2>🌤️ Weather & Agricultural Alerts</h2>
-					<p className="muted">
+					<p className="location-info">
 						{region.state ? `${region.state} • ` : ''}
 						📍 Lat {coords.lat.toFixed(3)}, Lon {coords.lon.toFixed(3)}
 					</p>
 				</div>
-			</div>
+			</motion.div>
 
-			{err && (
-				<div className="row">
-					<div className="card">
-						<div style={{
-							padding: '16px',
-							backgroundColor: 'var(--red-100)',
-							border: '1px solid var(--red-200)',
-							borderRadius: 'var(--radius-md)',
-						}}>
-							<p style={{color: 'var(--red-700)', margin: '0'}}>⚠️ Weather Error: {err}</p>
-						</div>
-					</div>
-				</div>
-			)}
-
-			{!wx && !err && (
-				<div className="row">
-					<div className="card text-center">
-						<div className="loading" style={{margin: '0 auto 16px'}}></div>
-						<p className="muted">Loading weather data...</p>
-					</div>
-				</div>
-			)}
-
-			{wx && (
-				<>
-					<div className="row grid-3">
-						<div className="card card-interactive fade-in-delay-1" style={{textAlign: 'center'}}>
-							<div style={{fontSize: '48px', marginBottom: '12px'}}>🌡️</div>
-							<div className="tag info" style={{marginBottom: '12px'}}>Temperature</div>
-							<div style={{
-								fontSize: '36px', 
-								fontWeight: '700', 
-								color: 'var(--green-600)',
-								marginBottom: '8px'
-							}}>
-								{wx.temperature.toFixed(1)}°C
+			<AnimatePresence>
+				{err && (
+					<motion.div 
+						className="card error-card"
+						initial={{ opacity: 0, y: -20 }}
+						animate={{ opacity: 1, y: 0 }}
+						exit={{ opacity: 0, y: -20 }}
+						transition={{ duration: 0.3 }}
+					>
+						<div className="error-content">
+							<span className="error-icon">⚠️</span>
+							<div className="error-text">
+								<h3>Weather Error</h3>
+								<p>{err}</p>
 							</div>
-							<p className="muted">Current temperature</p>
+						</div>
+					</motion.div>
+				)}
+			</AnimatePresence>
+
+			<AnimatePresence>
+				{!wx && !err && (
+					<motion.div 
+						className="card loading-card"
+						initial={{ opacity: 0, scale: 0.9 }}
+						animate={{ opacity: 1, scale: 1 }}
+						exit={{ opacity: 0, scale: 0.9 }}
+						transition={{ duration: 0.4 }}
+					>
+						<div className="loading-content">
+							<div className="loading-spinner-large"></div>
+							<p className="loading-text">Loading weather data...</p>
+						</div>
+					</motion.div>
+				)}
+			</AnimatePresence>
+
+			<AnimatePresence>
+				{wx && (
+					<motion.div
+						initial={{ opacity: 0 }}
+						animate={{ opacity: 1 }}
+						exit={{ opacity: 0 }}
+						transition={{ duration: 0.5 }}
+					>
+						<div className="weather-metrics grid-3">
+							<motion.div 
+								className="card metric-card temperature-card fade-in-delay-1"
+								initial={{ opacity: 0, y: 20 }}
+								animate={{ opacity: 1, y: 0 }}
+								transition={{ duration: 0.5, delay: 0.2 }}
+								whileHover={{ scale: 1.05, rotateY: 5 }}
+							>
+								<div className="metric-icon">🌡️</div>
+								<div className="metric-label">Temperature</div>
+								<div className="metric-value temperature-value">
+									{wx.temperature.toFixed(1)}°C
+								</div>
+								<div className="metric-description">Current temperature</div>
+							</motion.div>
+
+							<motion.div 
+								className="card metric-card wind-card fade-in-delay-2"
+								initial={{ opacity: 0, y: 20 }}
+								animate={{ opacity: 1, y: 0 }}
+								transition={{ duration: 0.5, delay: 0.3 }}
+								whileHover={{ scale: 1.05, rotateY: 5 }}
+							>
+								<div className="metric-icon">💨</div>
+								<div className="metric-label">Wind Speed</div>
+								<div className="metric-value wind-value">
+									{wx.windspeed.toFixed(0)} km/h
+								</div>
+								<div className="metric-description">Wind conditions</div>
+							</motion.div>
+
+							<motion.div 
+								className="card metric-card precipitation-card fade-in-delay-3"
+								initial={{ opacity: 0, y: 20 }}
+								animate={{ opacity: 1, y: 0 }}
+								transition={{ duration: 0.5, delay: 0.4 }}
+								whileHover={{ scale: 1.05, rotateY: 5 }}
+							>
+								<div className="metric-icon">🌧️</div>
+								<div className="metric-label">Precipitation</div>
+								<div className="metric-value precipitation-value">
+									{wx.precipitation.toFixed(1)} mm
+								</div>
+								<div className="metric-description">Current rainfall</div>
+							</motion.div>
 						</div>
 
-						<div className="card card-interactive fade-in-delay-2" style={{textAlign: 'center'}}>
-							<div style={{fontSize: '48px', marginBottom: '12px'}}>💨</div>
-							<div className="tag info" style={{marginBottom: '12px'}}>Wind Speed</div>
-							<div style={{
-								fontSize: '36px', 
-								fontWeight: '700', 
-								color: 'var(--blue-500)',
-								marginBottom: '8px'
-							}}>
-								{wx.windspeed.toFixed(0)} km/h
-							</div>
-							<p className="muted">Wind conditions</p>
-						</div>
-
-						<div className="card card-interactive fade-in-delay-3" style={{textAlign: 'center'}}>
-							<div style={{fontSize: '48px', marginBottom: '12px'}}>🌧️</div>
-							<div className="tag info" style={{marginBottom: '12px'}}>Precipitation</div>
-							<div style={{
-								fontSize: '36px', 
-								fontWeight: '700', 
-								color: 'var(--blue-600)',
-								marginBottom: '8px'
-							}}>
-								{wx.precipitation.toFixed(1)} mm
-							</div>
-							<p className="muted">Current rainfall</p>
-						</div>
-					</div>
-
-					<div className="row">
-						<div className="card fade-in-delay-1">
+						<motion.div 
+							className="card alerts-card"
+							initial={{ opacity: 0, y: 20 }}
+							animate={{ opacity: 1, y: 0 }}
+							transition={{ duration: 0.5, delay: 0.5 }}
+						>
 							<h3>🚨 Agricultural Alerts & Recommendations</h3>
-							{alerts.length === 0 && (
-								<div style={{
-									padding: '20px',
-									backgroundColor: 'var(--green-100)',
-									border: '1px solid var(--green-200)',
-									borderRadius: 'var(--radius-md)',
-									textAlign: 'center'
-								}}>
-									<div style={{fontSize: '48px', marginBottom: '12px'}}>✅</div>
-									<p style={{color: 'var(--green-700)', fontWeight: '600', margin: '0'}}>
-										No critical alerts detected
-									</p>
-									<p style={{color: 'var(--green-600)', margin: '8px 0 0'}}>
-										Weather conditions look favorable for farming activities
-									</p>
-								</div>
-							)}
-							{alerts.length > 0 && (
-								<div style={{display: 'flex', flexDirection: 'column', gap: '12px'}}>
-									{alerts.map((alert, index) => (
-										<div key={index} style={{
-											padding: '16px',
-											backgroundColor: 'var(--yellow-100)',
-											border: '1px solid var(--yellow-200)',
-											borderRadius: 'var(--radius-md)',
-											display: 'flex',
-											alignItems: 'flex-start',
-											gap: '12px'
-										}}>
-											<span style={{fontSize: '24px'}}>⚠️</span>
-											<div>
-												<p style={{
-													color: 'var(--yellow-700)',
-													fontWeight: '600',
-													margin: '0 0 4px 0'
-												}}>
-													Weather Alert
-												</p>
-												<p style={{
-													color: 'var(--yellow-600)',
-													margin: '0'
-												}}>
-													{alert}
-												</p>
-											</div>
-										</div>
-									))}
-								</div>
-							)}
-						</div>
-					</div>
+							<AnimatePresence>
+								{alerts.length === 0 ? (
+									<motion.div 
+										className="no-alerts"
+										initial={{ opacity: 0, scale: 0.9 }}
+										animate={{ opacity: 1, scale: 1 }}
+										exit={{ opacity: 0, scale: 0.9 }}
+										transition={{ duration: 0.4 }}
+									>
+										<div className="success-icon-large">✅</div>
+										<h4>No Critical Alerts</h4>
+										<p>Weather conditions look favorable for farming activities</p>
+									</motion.div>
+								) : (
+									<motion.div 
+										className="alerts-list"
+										initial={{ opacity: 0 }}
+										animate={{ opacity: 1 }}
+										exit={{ opacity: 0 }}
+										transition={{ duration: 0.4 }}
+									>
+										{alerts.map((alert, index) => (
+											<motion.div 
+												key={index}
+												className="alert-item"
+												initial={{ opacity: 0, x: -20 }}
+												animate={{ opacity: 1, x: 0 }}
+												transition={{ duration: 0.3, delay: index * 0.1 }}
+												whileHover={{ scale: 1.02, x: 8 }}
+											>
+												<span className="alert-icon">⚠️</span>
+												<div className="alert-content">
+													<h4>Weather Alert</h4>
+													<p>{alert}</p>
+												</div>
+											</motion.div>
+										))}
+									</motion.div>
+								)}
+							</AnimatePresence>
+						</motion.div>
 
-					<div className="row">
-						<div className="card fade-in-delay-2">
+						<motion.div 
+							className="card summary-card"
+							initial={{ opacity: 0, y: 20 }}
+							animate={{ opacity: 1, y: 0 }}
+							transition={{ duration: 0.5, delay: 0.6 }}
+						>
 							<h3>📊 Weather Summary</h3>
-							<div className="grid-2" style={{gap: '16px'}}>
-								<div style={{
-									padding: '16px',
-									backgroundColor: 'var(--bg-accent)',
-									borderRadius: 'var(--radius-md)',
-									border: '1px solid var(--panel-border)'
-								}}>
-									<h4 style={{color: 'var(--green-600)', marginBottom: '8px'}}>
-										🌡️ Temperature Status
-									</h4>
-									<p className="muted">
+							<div className="summary-grid grid-2">
+								<div className="summary-item temperature-summary">
+									<h4>🌡️ Temperature Status</h4>
+									<p className="status-text">
 										{wx.temperature < 5 ? '❄️ Cold - Risk of frost damage' :
 										 wx.temperature > 38 ? '🔥 Very Hot - Heat stress risk' :
 										 wx.temperature > 30 ? '☀️ Hot - Monitor irrigation' :
@@ -235,16 +258,9 @@ export default function Weather() {
 									</p>
 								</div>
 
-								<div style={{
-									padding: '16px',
-									backgroundColor: 'var(--bg-accent)',
-									borderRadius: 'var(--radius-md)',
-									border: '1px solid var(--panel-border)'
-								}}>
-									<h4 style={{color: 'var(--blue-600)', marginBottom: '8px'}}>
-										💨 Wind Conditions
-									</h4>
-									<p className="muted">
+								<div className="summary-item wind-summary">
+									<h4>💨 Wind Conditions</h4>
+									<p className="status-text">
 										{wx.windspeed > 30 ? '🌪️ Strong - Avoid spraying' :
 										 wx.windspeed > 15 ? '💨 Moderate - Caution with spraying' :
 										 '🍃 Calm - Good for all activities'}
@@ -252,28 +268,14 @@ export default function Weather() {
 								</div>
 							</div>
 							
-							<div style={{
-								marginTop: '16px',
-								padding: '12px',
-								backgroundColor: 'var(--blue-50)',
-								borderRadius: 'var(--radius-sm)',
-								border: '1px solid var(--blue-200)'
-							}}>
-								<p style={{
-									fontSize: '14px',
-									color: 'var(--blue-700)',
-									margin: '0',
-									display: 'flex',
-									alignItems: 'center',
-									gap: '8px'
-								}}>
-									ℹ️ Last updated: {new Date(wx.time).toLocaleString()}
-								</p>
+							<div className="last-updated">
+								<span className="update-icon">ℹ️</span>
+								Last updated: {new Date(wx.time).toLocaleString()}
 							</div>
-						</div>
-					</div>
-				</>
-			)}
-		</div>
+						</motion.div>
+					</motion.div>
+				)}
+			</AnimatePresence>
+		</motion.div>
 	)
 }

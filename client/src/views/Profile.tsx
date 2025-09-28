@@ -12,28 +12,25 @@ export default function Profile() {
   const [msg, setMsg] = useState<string | null>(null);
 
   useEffect(() => {
+    // Always fetch profile data on mount (navigation or reload)
+    const fetchProfile = async () => {
+      await ensureProfileBootstrap();
+      const p = getProfile();
+      setPts(p.points);
+      setQuests(p.completedQuests);
+      try {
+        const r = await getEvidenceStatus(getProfile().id);
+        setReview(r.byQuest || {});
+      } catch {}
+    };
+    fetchProfile();
+
+    // Listen for profile changes
     const h = (e: any) => {
       setPts(e?.detail?.profile?.points ?? getProfile().points);
       setQuests(e?.detail?.profile?.completedQuests ?? getProfile().completedQuests);
     };
     window.addEventListener('profile:changed', h);
-
-    // Initial cloud bootstrap
-    void ensureProfileBootstrap().then(() => {
-      const p = getProfile();
-      setPts(p.points);
-      setQuests(p.completedQuests);
-
-      // Fetch review status
-      const run = async () => {
-        try {
-          const r = await getEvidenceStatus(getProfile().id);
-          setReview(r.byQuest || {});
-        } catch {}
-      };
-      run();
-    });
-
     return () => window.removeEventListener('profile:changed', h);
   }, []);
 
