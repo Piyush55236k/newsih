@@ -14,7 +14,7 @@ import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+CORS(app, origins=["http://localhost:5173", "https://newsih-gtmo.vercel.app"], supports_credentials=True)
 
 # Configure Flask app
 app.config['DEBUG'] = True
