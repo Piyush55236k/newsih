@@ -458,24 +458,27 @@ def get_soil_data(lat, lon):
         api_functions.append((get_icar_soil_data, "ICAR"))
     
     # Use ThreadPoolExecutor for concurrent API calls
+    from concurrent.futures import TimeoutError as FuturesTimeoutError
     with ThreadPoolExecutor(max_workers=3, thread_name_prefix="soil_main") as executor:
         future_to_api = {}
         for api_func, api_name in api_functions:
             future = executor.submit(api_func, lat, lon)
             future_to_api[future] = api_name
-        
         # Collect results as they complete
-        for future in as_completed(future_to_api, timeout=15):
-            api_name = future_to_api[future]
-            try:
-                soil_data = future.result(timeout=5)
-                if soil_data and isinstance(soil_data, dict) and 'data' in soil_data:
-                    soil_sources.append(soil_data)
-                    print(f"✅ {api_name} completed successfully")
-                else:
-                    print(f"⚠️ {api_name} returned invalid data")
-            except Exception as e:
-                print(f"⚠️ {api_name} failed: {e}")
+        try:
+            for future in as_completed(future_to_api, timeout=15):
+                api_name = future_to_api[future]
+                try:
+                    soil_data = future.result(timeout=5)
+                    if soil_data and isinstance(soil_data, dict) and 'data' in soil_data:
+                        soil_sources.append(soil_data)
+                        print(f"✅ {api_name} completed successfully")
+                    else:
+                        print(f"⚠️ {api_name} returned invalid data")
+                except Exception as e:
+                    print(f"⚠️ {api_name} failed: {e}")
+        except FuturesTimeoutError as e:
+            print(f"⚠️ Some soil API calls timed out: {e}. Using only completed results.")
     
     # Process soil data
     # Ensure soil_sources is always a valid list
