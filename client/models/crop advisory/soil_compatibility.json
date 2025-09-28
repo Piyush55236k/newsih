@@ -1,0 +1,59 @@
+{
+    "compatibility_matrix": {
+        "Clay": {
+            "Clay Loam": 0.8,
+            "Silty Clay": 0.9,
+            "Sandy Clay": 0.7,
+            "Silty Clay Loam": 0.6,
+            "Sandy Clay Loam": 0.5
+        },
+        "Loam": {
+            "Clay Loam": 0.9,
+            "Sandy Loam": 0.9,
+            "Silt Loam": 0.9,
+            "Sandy Clay Loam": 0.8,
+            "Silty Clay Loam": 0.8
+        },
+        "Sandy": {
+            "Sandy Loam": 0.9,
+            "Loamy Sand": 0.9,
+            "Sandy Clay": 0.7,
+            "Sandy Clay Loam": 0.8
+        },
+        "Silt": {
+            "Silt Loam": 0.9,
+            "Silty Clay": 0.8,
+            "Silty Clay Loam": 0.7
+        },
+        "Alluvial": {
+            "Loam": 0.9,
+            "Sandy Loam": 0.8,
+            "Clay Loam": 0.8,
+            "Silt Loam": 0.8
+        },
+        "Well-drained Loam": {
+            "Loam": 1.0,
+            "Sandy Loam": 0.9,
+            "Clay Loam": 0.8
+        },
+        "Lateritic": {
+            "Clay": 0.7,
+            "Sandy Clay": 0.7,
+            "Clay Loam": 0.6
+        }
+    },
+    "drainage_factors": {
+        "Clay": 0.4,
+        "Sandy": 0.9,
+        "Loam": 0.7,
+        "Silt": 0.5,
+        "Clay Loam": 0.6,
+        "Sandy Loam": 0.8,
+        "Silt Loam": 0.6,
+        "Sandy Clay": 0.5,
+        "Silty Clay": 0.4,
+        "Alluvial": 0.7,
+        "Lateritic": 0.6,
+        "Well-drained Loam": 0.8
+    }
+}

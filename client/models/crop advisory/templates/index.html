@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Crop Advisory</title>
+<style>
+body { font-family: Arial,sans-serif; margin: 20px; background-color:#f8f9fa; }
+h1,h2 { color:#2c3e50; }
+input, button, datalist { padding:10px; margin:5px 0; font-size:16px; border-radius:5px; border:1px solid #ddd; }
+button { background-color:#27ae60; color:white; border:none; cursor:pointer; }
+button:hover { background-color:#229954; }
+button:disabled { background-color:#bdc3c7; cursor:not-allowed; }
+.container { max-width:1200px; margin:0 auto; background:white; padding:20px; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,0.1); }
+.form-group { margin-bottom:15px; }
+#manual-location { background:#fff3cd; border:1px solid #ffeaa7; border-radius:5px; padding:15px; margin:10px 0; display:none; }
+#manual-location input { width:200px; margin-right:10px; }
+#manual-location button { background-color:#f39c12; }
+#manual-location button:hover { background-color:#e67e22; }
+
+/* Data source indicators */
+.data-sources { 
+    background-color: #e8f4f8; 
+    border-left: 4px solid #3498db; 
+    padding: 10px; 
+    margin: 10px 0; 
+    border-radius: 5px; 
+    font-size: 12px; 
+}
+.sources-title { font-weight: bold; color: #2c3e50; margin-bottom: 5px; }
+.sources-list { color: #34495e; }
+.anomaly-warning { 
+    background-color: #ffeaa7; 
+    border-left: 4px solid #f39c12; 
+    padding: 8px; 
+    margin: 5px 0; 
+    border-radius: 3px; 
+    font-size: 11px; 
+    color: #795548; 
+}
+
+/* Soil composition display */
+.soil-composition {
+    display: flex;
+    gap: 15px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+.composition-item {
+    background-color: #f8f9fa;
+    padding: 8px 12px;
+    border-radius: 5px;
+    border: 1px solid #dee2e6;
+    font-size: 13px;
+}
+.clay { border-left: 3px solid #8b4513; }
+.sand { border-left: 3px solid #daa520; }
+.silt { border-left: 3px solid #708090; }
+
+table { border-collapse:collapse; width:100%; margin-top:15px; font-size:14px; max-height: 600px; overflow-y: auto; display: block; }
+thead, tbody { display: table; width: 100%; table-layout: fixed; }
+th, td { border:1px solid #2ecc71; padding:8px; text-align:center; }
+th { background-color:#27ae60; color:white; font-size:12px; position: sticky; top: 0; z-index: 10; }
+
+/* Crop Row Colors Based on Soil Health Impact */
+.crop-excellent { 
+    background-color: rgba(39, 174, 96, 0.1); 
+    border-left: 4px solid #27ae60; 
+}
+.crop-good { 
+    background-color: rgba(243, 156, 18, 0.1); 
+    border-left: 4px solid #f39c12; 
+}
+.crop-average { 
+    background-color: rgba(231, 76, 60, 0.1); 
+    border-left: 4px solid #e74c3c; 
+}
+.crop-excellent:hover { background-color: rgba(39, 174, 96, 0.2); }
+.crop-good:hover { background-color: rgba(243, 156, 18, 0.2); }
+.crop-average:hover { background-color: rgba(231, 76, 60, 0.2); }
+.info-section { background-color:#ecf0f1; padding:15px; border-radius:5px; margin:15px 0; }
+.crop-score { 
+    background-color:#3498db; 
+    color:white; 
+    padding:3px 8px; 
+    border-radius:12px; 
+    font-size:11px; 
+    font-weight:bold;
+    cursor: pointer;
+    position: relative;
+}
+.penalties-tooltip {
+    display: none;
+    position: absolute;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 8px;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    font-size: 11px;
+    color: #333;
+    min-width: 200px;
+    text-align: left;
+}
+.penalties-tooltip ul {
+    margin: 0;
+    padding-left: 16px;
+}
+.crop-score:hover .penalties-tooltip {
+    display: block;
+}
+.soil-health-excellent { 
+    color: #27ae60; 
+    font-weight: bold;
+    background-color: rgba(39, 174, 96, 0.1);
+}
+.soil-health-good { 
+    color: #f39c12;
+    font-weight: bold;
+    background-color: rgba(243, 156, 18, 0.1);
+}
+.soil-health-fair { 
+    color: #e74c3c;
+    font-weight: bold;
+    background-color: rgba(231, 76, 60, 0.1);
+}
+#soil-weather, #recommended-crops-section { margin-top:20px; display:none; }
+.rotation-suggestions { background-color:#e8f8f5; padding:15px; border-left:4px solid #27ae60; margin:15px 0; }
+.no-crops-message { text-align:center; padding:30px; color:#7f8c8d; font-style:italic; }
+#error-message { color:red; font-weight:bold; margin-top:10px; }
+
+/* Color Legend Styles */
+.color-legend { 
+    background-color: #f8f9fa; 
+    border-radius: 8px; 
+    padding: 15px; 
+    margin: 15px 0; 
+    border: 1px solid #dee2e6; 
+}
+.legend-title { 
+    font-weight: bold; 
+    color: #2c3e50; 
+    margin-bottom: 10px; 
+    font-size: 16px; 
+}
+.legend-items { 
+    display: flex; 
+    flex-wrap: wrap; 
+    gap: 15px; 
+    align-items: center; 
+}
+.legend-item { 
+    display: flex; 
+    align-items: center; 
+    font-size: 14px; 
+}
+.legend-color { 
+    width: 20px; 
+    height: 15px; 
+    border-radius: 3px; 
+    margin-right: 8px; 
+    border: 1px solid #ddd; 
+}
+.legend-excellent { background-color: #d5f4e6; border-left: 3px solid #27ae60; }
+.legend-good { background-color: #ffffff; border-left: 3px solid #f39c12; border: 1px solid #dee2e6; }
+.legend-average { background-color: #fdf2f2; border-left: 3px solid #e74c3c; }
+
+/* Loading Spinner Styles */
+.loading-container { 
+    display: none; 
+    text-align: center; 
+    margin: 20px 0; 
+    padding: 30px; 
+    background-color: #f8f9fa; 
+    border-radius: 10px; 
+    border: 2px solid #27ae60; 
+}
+.loading-spinner { 
+    border: 4px solid #ecf0f1; 
+    border-top: 4px solid #27ae60; 
+    border-radius: 50%; 
+    width: 40px; 
+    height: 40px; 
+    animation: spin 1s linear infinite; 
+    margin: 0 auto 15px auto; 
+}
+.loading-text { 
+    color: #27ae60; 
+    font-weight: bold; 
+    font-size: 16px; 
+    margin-bottom: 10px; 
+}
+.loading-subtext { 
+    color: #7f8c8d; 
+    font-size: 14px; 
+    font-style: italic; 
+}
+@keyframes spin { 
+    0% { transform: rotate(0deg); } 
+    100% { transform: rotate(360deg); } 
+}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>🌾 Smart Crop Advisory System</h1>
+
+<form id="advisory-form">
+    <div class="form-group">
+        <label><strong>Your Location:</strong> <span id="location-display">Detecting location...</span></label>
+        <div id="manual-location">
+            <p><strong>📍 Enter your location manually:</strong></p>
+            <input type="text" id="manual-state" placeholder="Enter State" />
+            <input type="text" id="manual-city" placeholder="Enter City" />
+            <button type="button" id="use-manual-location">Use This Location</button>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="past-crop">Past Crop:</label>
+        <input list="crop-list" id="past-crop" name="past_crop" placeholder="Select or type crop name" autocomplete="off"/>
+        <datalist id="crop-list">
+            <option value="Rice"><option value="Wheat"><option value="Maize"><option value="Jowar (Sorghum)">
+            <option value="Bajra (Pearl Millet)"><option value="Ragi (Finger Millet)"><option value="Barley">
+            <option value="Gram (Chickpea)"><option value="Tur (Pigeon Pea)"><option value="Urad (Black Gram)">
+            <option value="Moong (Green Gram)"><option value="Masoor (Red Lentil)"><option value="Peas">
+            <option value="Sugarcane"><option value="Cotton"><option value="Sunflower"><option value="Jute">
+            <option value="Groundnut"><option value="Sesamum (Sesame)"><option value="Tea"><option value="Coffee">
+            <option value="Rubber"><option value="Coconut"><option value="Banana"><option value="Mango">
+            <option value="Guava"><option value="Papaya"><option value="Potato"><option value="Onion">
+            <option value="Carrot"><option value="Cauliflower"><option value="Turmeric"><option value="Dry Chillies">
+            <option value="Coriander"><option value="Barseem"><option value="Napier Grass"><option value="Lucerne">
+            <option value="Mustard"><option value="Rajma (Kidney Beans)"><option value="Sugar Beet"><option value="Cabbage">
+            <option value="Turnip"><option value="Radish"><option value="Spinach">
+        </datalist>
+    </div>
+
+    <div class="form-group">
+        <label for="date">Date (optional):</label>
+        <input type="date" id="date" name="date" />
+    </div>
+
+    <button type="submit" disabled id="submit-button">Get Advice</button>
+    <div id="error-message"></div>
+</form>
+
+<!-- Loading Indicator -->
+<div id="loading-container" class="loading-container">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">🌾 Analyzing your farm data...</div>
+    <div class="loading-subtext">Getting soil information from multiple sources, weather data, and generating crop recommendations</div>
+</div>
+
+<div id="soil-weather" class="info-section">
+<h2>🌍 Soil & Weather Analysis</h2>
+
+<!-- Soil Information -->
+<p><strong>Soil Type:</strong> <span id="soil-type"></span></p>
+<div id="soil-composition" class="soil-composition" style="display: none;">
+    <div class="composition-item clay">
+        <strong>Clay:</strong> <span id="clay-percent"></span>%
+    </div>
+    <div class="composition-item sand">
+        <strong>Sand:</strong> <span id="sand-percent"></span>%
+    </div>
+    <div class="composition-item silt">
+        <strong>Silt:</strong> <span id="silt-percent"></span>%
+    </div>
+</div>
+<div id="soil-sources" class="data-sources" style="display: none;">
+    <div class="sources-title">📊 Soil Data Sources:</div>
+    <div class="sources-list" id="soil-sources-list"></div>
+</div>
+
+<!-- Weather Information -->
+<p><strong>Temperature:</strong> <span id="temperature"></span> °C</p>
+<p><strong>Rainfall:</strong> <span id="rainfall"></span> mm</p>
+<p><strong>Detected Season:</strong> <span id="season"></span></p>
+<div id="weather-sources" class="data-sources" style="display: none;">
+    <div class="sources-title">🌤️ Weather Data Sources:</div>
+    <div class="sources-list" id="weather-sources-list"></div>
+</div>
+<div id="weather-anomalies" class="anomaly-warning" style="display: none;">
+    ⚠️ Some weather data sources showed significant variations. Results averaged from available sources.
+</div>
+</div>
+
+<div id="rotation-suggestions" class="rotation-suggestions" style="display: none;">
+<h3>🔄 Crop Rotation Insights</h3>
+<ul id="rotation-list"></ul>
+</div>
+
+<div id="recommended-crops-section">
+<h2>📊 Recommended Crops & Analysis</h2>
+<p id="crops-count" style="color: #27ae60; font-weight: bold; margin-bottom: 10px;"></p>
+
+<!-- Color Legend for Crop Recommendations -->
+<div class="color-legend">
+    <div class="legend-title">🎨 Crop Recommendation Color Guide</div>
+    <div class="legend-items">
+        <div class="legend-item">
+            <div class="legend-color legend-excellent"></div>
+            <span><strong>Excellent Match</strong> - High score (80+) with soil benefits</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color legend-good"></div>
+            <span><strong>Good Match</strong> - Medium score (60-79) or neutral impact</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color legend-average"></div>
+            <span><strong>Fair Match</strong> - Lower score (&lt;60) but still suitable</span>
+        </div>
+    </div>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Crop</th><th>Season</th><th>Score</th><th>Soil Health Impact</th>
+            <th>Temp Range (°C)</th><th>Rainfall Range (mm)</th><th>Soil Types</th>
+            <th>Rotation Benefit</th>
+        </tr>
+    </thead>
+    <tbody id="crops-table-body"></tbody>
+</table>
+</div>
+
+<script>
+let userLat=null, userLon=null, userCity=null, userState=null;
+
+function showLocationMessage(msg){ document.getElementById('location-display').textContent=msg; }
+
+// ---------------- Manual Location -----------------
+document.getElementById('use-manual-location').addEventListener('click', function(){
+    const state=document.getElementById('manual-state').value.trim();
+    const city=document.getElementById('manual-city').value.trim();
+    
+    // Validation
+    if(!state||!city){ 
+        alert("Please fill both State and City."); 
+        return; 
+    }
+    
+    // Check for common typos or formats
+    if(state.length < 2 || city.length < 2) {
+        alert("Please enter valid state and city names."); 
+        return;
+    }
+
+    // Set the manual location
+    userLat=null; userLon=null;
+    userCity=city; userState=state;
+    
+    // Show location and hide manual input
+    showLocationMessage(`${city}, ${state} (Manual)`);
+    document.getElementById('manual-location').style.display='none';
+    document.getElementById('submit-button').disabled=false;
+    
+    console.log(`Manual location set: ${city}, ${state}`);
+});
+
+// ---------------- GPS Detection -----------------
+if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(pos=>{
+        userLat=pos.coords.latitude; userLon=pos.coords.longitude;
+        fetch(`https://nominatim.openstreetmap.org/reverse?lat=${userLat}&lon=${userLon}&format=json`)
+        .then(r=>r.json()).then(data=>{
+            let city=data.address.city||data.address.town||data.address.village||"Unknown";
+            let state=data.address.state||data.address.region||data.address.state_district||"Unknown";
+            userCity=city; userState=state;
+            showLocationMessage(`${city} (${state})`);
+            document.getElementById('submit-button').disabled=false;
+        }).catch(()=>{
+            showLocationMessage('Location detected, but unable to get city/state.');
+            document.getElementById('submit-button').disabled=false;
+        });
+    }, err=>{
+        showLocationMessage('Location permission denied or unavailable.');
+        document.getElementById('manual-location').style.display='block';
+    });
+}else{
+    showLocationMessage('Geolocation not supported by browser.');
+    document.getElementById('manual-location').style.display='block';
+}
+
+// ---------------- Form Submit -----------------
+document.getElementById('advisory-form').addEventListener('submit', async function(e){
+    e.preventDefault();
+    
+    // Clear previous results and errors
+    document.getElementById('error-message').textContent='';
+    document.getElementById('soil-weather').style.display='none';
+    document.getElementById('recommended-crops-section').style.display='none';
+    document.getElementById('rotation-suggestions').style.display='none';
+
+    const pastCrop=document.getElementById('past-crop').value.trim();
+    const date=document.getElementById('date').value;
+
+    if(!userLat && !userCity){ 
+        document.getElementById('error-message').textContent='Please provide location.'; 
+        return; 
+    }
+
+    const payload={ past_crop:pastCrop || null, date:date || null };
+    if(userLat && userLon){ payload.lat=userLat; payload.lon=userLon; }
+    else{ payload.city=userCity; payload.state=userState; }
+
+    // Show loading indicator with dynamic messages
+    document.getElementById('loading-container').style.display='block';
+    document.getElementById('submit-button').disabled = true;
+    document.getElementById('submit-button').textContent = 'Processing...';
+    
+    // Dynamic loading messages
+    const loadingMessages = [
+        '🌾 Analyzing your farm data...',
+        '🌍 Getting soil information from multiple sources...',
+        '🌤️ Fetching weather data from APIs...',
+        '📊 Combining data from different sources...',
+        '🔬 Analyzing soil composition...',
+        '💡 Generating crop recommendations...'
+    ];
+    
+    let messageIndex = 0;
+    const loadingTextElement = document.querySelector('.loading-text');
+    const messageInterval = setInterval(() => {
+        messageIndex = (messageIndex + 1) % loadingMessages.length;
+        loadingTextElement.textContent = loadingMessages[messageIndex];
+    }, 2000);
+
+    try{
+        const response = await fetch('/recommend', {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify(payload)
+        });
+        
+        if(!response.ok){ 
+            const errorData = await response.json();
+            throw new Error(errorData.error || "Server returned error"); 
+        }
+        
+        const data = await response.json();
+
+        // ---------------- Soil & Weather -----------------
+        document.getElementById('soil-weather').style.display='block';
+        document.getElementById('soil-type').textContent = data.soil_data.soil_type;
+        
+        // Show soil composition if available
+        if(data.soil_data.composition) {
+            document.getElementById('soil-composition').style.display='flex';
+            document.getElementById('clay-percent').textContent = data.soil_data.composition.clay;
+            document.getElementById('sand-percent').textContent = data.soil_data.composition.sand;
+            document.getElementById('silt-percent').textContent = data.soil_data.composition.silt;
+        }
+        
+        // Show soil data sources
+        if(data.soil_data.sources && data.soil_data.sources.length > 0) {
+            document.getElementById('soil-sources').style.display='block';
+            document.getElementById('soil-sources-list').textContent = data.soil_data.sources.join(', ');
+        }
+        
+        document.getElementById('temperature').textContent = data.weather.temp;
+        document.getElementById('rainfall').textContent = data.weather.rainfall;
+        document.getElementById('season').textContent = data.weather.season;
+        
+        // Show weather data sources
+        if(data.weather.sources && data.weather.sources.length > 0) {
+            document.getElementById('weather-sources').style.display='block';
+            document.getElementById('weather-sources-list').textContent = data.weather.sources.join(', ');
+        }
+        
+        // Show weather anomaly warning if present
+        if(data.weather.temp_anomalies || data.weather.rain_anomalies) {
+            document.getElementById('weather-anomalies').style.display='block';
+        }
+
+        // ---------------- Crop Rotation -----------------
+        const rotationEl = document.getElementById('rotation-suggestions');
+        const rotationList = document.getElementById('rotation-list');
+        rotationList.innerHTML='';
+        if(data.recommendations.rotation_suggestion && data.recommendations.rotation_suggestion.length>0){
+            rotationEl.style.display='block';
+            data.recommendations.rotation_suggestion.forEach(c=>{
+                const li=document.createElement('li'); li.textContent=c; rotationList.appendChild(li);
+            });
+        }else rotationEl.style.display='none';
+
+        // ---------------- Recommended Crops -----------------
+        const tbody=document.getElementById('crops-table-body');
+        const cropsCountEl=document.getElementById('crops-count');
+        tbody.innerHTML='';
+        
+        // Use recommendations as an array
+        if(!Array.isArray(data.recommendations) || data.recommendations.length===0){
+            tbody.innerHTML='<tr><td colspan="8" class="no-crops-message">No suitable crops found for your location and soil conditions.</td></tr>';
+            cropsCountEl.textContent = '';
+        }else{
+            // Update crop count display
+            const totalCrops = data.recommendations.length;
+            cropsCountEl.textContent = `🌾 Found ${totalCrops} suitable crop${totalCrops > 1 ? 's' : ''} for your conditions`;
+            
+            data.recommendations.forEach(crop=>{
+                const tr = document.createElement('tr');
+                const rotationBenefit = crop.Rotation_Benefit || crop.rotation_benefit || '-';
+                // Determine row color class based on soil health impact
+                let rowClass = 'crop-average'; // default
+                const score = parseFloat(crop.score || 0);
+                if (crop.soil_health_impact === 'Excellent Match') {
+                    rowClass = 'crop-excellent';
+                } else if (crop.soil_health_impact === 'Good Match') {
+                    rowClass = 'crop-good';
+                } else {
+                    rowClass = 'crop-average';
+                }
+                tr.className = rowClass;
+                const soilTypes = Array.isArray(crop.Soil_Type) ? crop.Soil_Type : (Array.isArray(crop.soil_types) ? crop.soil_types : []);
+                tr.innerHTML=`
+                    <td>${crop.Crop || crop.crop}</td>
+                    <td>${Array.isArray(crop.Season || crop.season) ? (crop.Season || crop.season).join(', ') : (crop.Season || crop.season)}</td>
+                    <td>
+                        <span class="crop-score">${crop.score || 0}</span>
+                        ${crop.penalties ? 
+                            `<div class="penalties-tooltip">
+                                <ul>
+                                    ${crop.penalties.map(p => `<li>${p.reason}: ${p.penalty}</li>`).join('')}
+                                </ul>
+                            </div>` 
+                            : ''}
+                    </td>
+                    <td class="${
+                        crop.soil_health_impact === 'Excellent Match' ? 'soil-health-excellent' :
+                        crop.soil_health_impact === 'Good Match' ? 'soil-health-good' :
+                        'soil-health-fair'
+                    }">${crop.soil_health_impact}</td>
+                    <td>${crop.temp_range || 'N/A'}</td>
+                    <td>${crop.rainfall_range || 'N/A'}</td>
+                    <td>${soilTypes.join(', ')}</td>
+                    <td>${rotationBenefit}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+        document.getElementById('recommended-crops-section').style.display='block';
+        
+        // Hide loading indicator and restore button
+        clearInterval(messageInterval);
+        document.getElementById('loading-container').style.display='none';
+        document.getElementById('submit-button').disabled = false;
+        document.getElementById('submit-button').textContent = 'Get Advice';
+        
+    }catch(err){
+        console.error(err);
+        
+        // Hide loading indicator and restore button
+        clearInterval(messageInterval);
+        document.getElementById('loading-container').style.display='none';
+        document.getElementById('submit-button').disabled = false;
+        document.getElementById('submit-button').textContent = 'Get Advice';
+        
+        document.getElementById('error-message').textContent = err.message || 'Failed to fetch recommendations. Please try again.';
+    }
+});
+</script>
+</div>
+</body>
+</html>
