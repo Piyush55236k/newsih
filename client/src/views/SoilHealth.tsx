@@ -75,7 +75,7 @@ export default function SoilHealth() {
 				transition={{ duration: 0.5, delay: 0.1 }}
 			>
 				<div className="card-header">
-					<h2>🌱 Soil Health Recommendations</h2>
+					<h2>🌱 Fertilizer Recommendations</h2>
 					<p className="muted">Enter basic soil test values to get AI-powered guidance for optimal crop growth.</p>
 				</div>
 				

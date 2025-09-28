@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 const features = [
   {
     id: 'soil',
-    title: 'Soil Health Analysis',
+    title: 'Fertilizer Recommendation',
     description: 'Get AI-powered fertilizer recommendations based on your soil test results',
     icon: '🌱',
     path: '/soil',
@@ -193,7 +193,7 @@ export default function OnboardingPage() {
           <Link to="/soil" className="quick-action-card primary">
             <div className="quick-action-icon">🌱</div>
             <div className="quick-action-content">
-              <h3>Soil Analysis</h3>
+              <h3>Fertilizer Recommendation</h3>
               <p>Get fertilizer recommendations</p>
             </div>
           </Link>

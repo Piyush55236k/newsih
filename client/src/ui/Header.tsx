@@ -31,7 +31,8 @@ export default function Header({ points }: { points: number }) {
         </motion.div>
         
         <nav className="header-nav">
-          <NavLink to="/soil" label="Soil Health" icon="🌱" />
+          <NavLink to="/soil" label="Fertilizer Recommendation" icon="🌱" />
+                <NavLink to="/soil" label="Fertilizer Recommendation" icon="🌱" />
           <NavLink to="/weather" label="Weather" icon="🌤️" />
           <NavLink to="/features" label="All Features" icon="✨" />
         </nav>
