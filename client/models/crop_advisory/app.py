@@ -1,5 +1,5 @@
 
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, make_response
 from flask_cors import CORS
 import requests
 from datetime import datetime, timedelta
@@ -11,222 +11,81 @@ import time
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 import threading
-from concurrent.futures import ThreadPoolExecutor, as_completed
+                "final_score": 1
+            }]
 
-app = Flask(__name__)
-CORS(app, origins=["http://localhost:5173", "https://newsih-gtmo.vercel.app"], supports_credentials=True)
-
-# Configure Flask app
-app.config['DEBUG'] = True
-app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
-
-# Session with improved connection pooling and retry strategy
-def create_session():
-    """Create an HTTP session with connection pooling and retry strategy"""
-    session = requests.Session()
-    
-    # Configure retry strategy
-    retry_strategy = Retry(
-        total=3,  # Total number of retries
-        backoff_factor=1,  # Wait time between retries
-        status_forcelist=[429, 500, 502, 503, 504],  # HTTP status codes to retry
-        allowed_methods=["HEAD", "GET", "POST"]  # HTTP methods to retry
-    )
-    adapter = HTTPAdapter(max_retries=retry_strategy, pool_connections=20, pool_maxsize=20)
-    session.mount("http://", adapter)
-    session.mount("https://", adapter)
-    return session
-
-# Global session instance
-api_session = create_session()
-
-# Simple in-memory cache for API responses
-weather_cache = {}
-soil_cache = {}
-CACHE_DURATION = 300  # 5 minutes in seconds
-
-def is_cache_valid(timestamp):
-    return time.time() - timestamp < CACHE_DURATION
-
-def get_cache_key(lat, lon, extra=None):
-    # Round coordinates to reduce cache misses for nearby locations
-    lat_rounded = round(lat, 2)
-    lon_rounded = round(lon, 2)
-    if extra:
-        return f"{lat_rounded},{lon_rounded},{extra}"
-    return f"{lat_rounded},{lon_rounded}"
-
-# Configuration - Use environment variables for API keys
-OPENWEATHERMAP_API_KEY = os.getenv('OPENWEATHERMAP_API_KEY', '')
-
-# ---------------- Load crop data -----------------
-with open("crops.json", "r") as f:
-    crop_data = json.load(f)
-
-# ---------------- Multiple Weather APIs -----------------
-def get_openmeteo_weather(lat, lon, date=None):
-    """Enhanced Open-Meteo API with better error handling and multiple endpoints"""
-    endpoints = [
-        "https://api.open-meteo.com/v1/forecast",
-        "https://archive-api.open-meteo.com/v1/archive"
-    ]
-    
-    try:
-        # Use current forecast for recent dates
-        if not date or date >= datetime.today().strftime("%Y-%m-%d"):
-            url = endpoints[0]
-            params = {
-                'latitude': lat,
-                'longitude': lon,
-                'current': 'temperature_2m,precipitation',
-                'daily': 'temperature_2m_max,precipitation_sum',
-                'timezone': 'auto',
-                'forecast_days': 1
+        response_data = {
+            "soil": soil_data,
+            "soil_data": soil_data,  # Include both keys for frontend compatibility
+            "weather": weather_data,
+            "weather_data": weather_data,  # Include both keys for frontend compatibility
+            "recommendations": recommendations,
+            "request_info": {
+                "lat": lat,
+                "lon": lon,
+                "past_crop": past_crop,
+                "date": date
             }
-        else:
-            url = endpoints[1]
-            params = {
-                'latitude': lat,
-                'longitude': lon,
-                'start_date': date,
-                'end_date': date,
-                'daily': 'temperature_2m_max,precipitation_sum',
-                'timezone': 'auto'
-            }
-        
-        print("🌤️ Trying Open-Meteo API")
-        
-        # Multiple attempts with different configurations
-        for attempt in range(2):
-            try:
-                response = api_session.get(url, params=params, timeout=15)
-                if response.status_code == 200:
-                    data = response.json()
-                    
-                    # Extract temperature and rainfall with better fallbacks
-                    temp = None
-                    rainfall = None
-                    
-                    # Try current data first
-                    if 'current' in data:
-                        temp = data['current'].get('temperature_2m', temp)
-                        rainfall = data['current'].get('precipitation', rainfall)
-                    
-                    # Fallback to daily data
-                    if temp is None and 'daily' in data:
-                        daily_temps = data['daily'].get('temperature_2m_max', [])
-                        if daily_temps:
-                            temp = daily_temps[0]
-                    
-                    if rainfall is None and 'daily' in data:
-                        daily_rain = data['daily'].get('precipitation_sum', [])
-                        if daily_rain:
-                            rainfall = daily_rain[0] or 0
-                    
-                    # Set reasonable defaults if still None
-                    temp = temp if temp is not None else 25
-                    rainfall = rainfall if rainfall is not None else 0
-                    
-                    print(f"✅ Open-Meteo: {temp}°C, {rainfall}mm")
-                    return {"temp": temp, "rainfall": rainfall, "source": "Open-Meteo"}
-                
-                elif response.status_code == 429:  # Rate limited
-                    print("⚠️ Open-Meteo rate limited, waiting...")
-                    time.sleep(2)
-                    continue
-                else:
-                    print(f"❌ Open-Meteo API response error: {response.status_code}")
-                    
-            except requests.exceptions.Timeout:
-                print(f"⚠️ Open-Meteo timeout on attempt {attempt + 1}, retrying...")
-                if attempt == 0:  # Try simpler request on timeout
-                    params = {'latitude': lat, 'longitude': lon, 'current': 'temperature_2m'}
-                continue
-            except requests.exceptions.RequestException as e:
-                print(f"⚠️ Open-Meteo connection error: {e}")
-                break
-                
-        return None
-        
+        }
+
+        # Final response validation
+        try:
+            # Test JSON serialization
+            test_json = json.dumps(response_data)
+            print(f"✅ Response JSON validation passed ({len(test_json)} chars)")
+        except Exception as json_error:
+            print(f"🚨 JSON serialization error: {json_error}")
+            # Return a completely safe response
+            return jsonify({
+                "error": "JSON serialization failed",
+                "recommendations": [{"crop": "Safe Default", "season": "Any", "soil_match": "Safe", "weather_match": False, "penalty": 0, "final_score": 1}],
+                "soil_data": {"soil_type": "Safe Default", "sources": ["Safe"]},
+                "weather_data": {"temp": 25, "rainfall": 100, "sources": ["Safe"]}
+            })
+
+        print(f"✅ Sending response with {len(recommendations)} recommendations")
+        resp = make_response(jsonify(response_data))
+        resp.headers["Access-Control-Allow-Origin"] = request.headers.get("Origin", "*")
+        resp.headers["Access-Control-Allow-Credentials"] = "true"
+        resp.headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization"
+        resp.headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS"
+        return resp
+
     except Exception as e:
-        print(f"❌ Open-Meteo failed: {e}")
-        return None
+        print(f"❌ General error in recommend route: {e}")
+        import traceback
+        traceback.print_exc()
 
-def get_openweathermap_weather(lat, lon):
-    try:
-        api_key = OPENWEATHERMAP_API_KEY
-        if not api_key:
-            print("⚠️ OpenWeatherMap API key not set, skipping OpenWeatherMap API")
-            return None
-        url = "https://api.openweathermap.org/data/2.5/weather"
-        params = {'lat': lat, 'lon': lon, 'appid': api_key, 'units': 'metric'}
-        print("☀️ Trying OpenWeatherMap API")
-        response = requests.get(url, params=params, timeout=10)
-        if response.status_code == 200:
-            data = response.json()
-            temp = data.get('main', {}).get('temp', 25)
-            rainfall = data.get('rain', {}).get('1h', 0) * 24 if 'rain' in data else 0
-            print(f"✅ OpenWeatherMap: {temp}°C, {rainfall}mm")
-            return {"temp": temp, "rainfall": rainfall, "source": "OpenWeatherMap"}
-        else:
-            print(f"❌ OpenWeatherMap API response error: {response.status_code}")
-            return None
-    except Exception as e:
-        print(f"❌ OpenWeatherMap failed: {e}")
-        return None
+        # Return a safe fallback response
+        fallback_soil = get_fallback_soil(28.6, 77.2)  # Default Delhi coordinates
+        fallback_weather = get_fallback_weather(28.6, 77.2)
 
-def combine_weather_data(weather_sources):
-    if not weather_sources:
-        raise Exception("No weather data available")
-    temps = [w.get('temp', 25) for w in weather_sources if w and isinstance(w, dict) and 'temp' in w and w['temp'] is not None]
-    rainfalls = [w.get('rainfall', 0) for w in weather_sources if w and isinstance(w, dict) and 'rainfall' in w and w['rainfall'] is not None]
-    avg_temp = sum(temps) / len(temps) if temps else 25
-    avg_rainfall = sum(rainfalls) / len(rainfalls) if rainfalls else 0
-    temp_anomalies = [abs(t - avg_temp) / max(avg_temp, 1) > 0.2 for t in temps if t is not None]
-    rain_anomalies = [abs(r - avg_rainfall) / (avg_rainfall + 1) > 0.3 for r in rainfalls if r is not None]
-    sources = [w.get('source', 'Unknown') for w in weather_sources if w and isinstance(w, dict)]
-    print(f"🌡️ Combined weather: {avg_temp:.1f}°C, {avg_rainfall:.1f}mm from {', '.join(sources)}")
-    return {
-        "temp": round(avg_temp, 1),
-        "rainfall": round(avg_rainfall, 1),
-        "sources": sources,
-        "temp_anomalies": any(temp_anomalies),
-        "rain_anomalies": any(rain_anomalies)
-    }
+        resp = make_response(jsonify({
+            "error": f"Internal server error: {str(e)}",
+            "soil": fallback_soil,
+            "soil_data": fallback_soil,  # Include both keys for compatibility
+            "weather": fallback_weather,
+            "weather_data": fallback_weather,  # Include both keys for compatibility
+            "recommendations": [{
+                "crop": "Error - using default data", 
+                "season": "Unknown", 
+                "soil_match": "Unknown", 
+                "weather_match": False, 
+                "penalty": 0, 
+                "final_score": 0
+            }]
+        }))
+        resp.headers["Access-Control-Allow-Origin"] = request.headers.get("Origin", "*")
+        resp.headers["Access-Control-Allow-Credentials"] = "true"
+        resp.headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization"
+        resp.headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS"
+        return resp, 500
+recent_errors = []
 
-def get_weather(lat, lon, date=None):
-    """Enhanced weather fetching with concurrent API calls, smart fallbacks, and caching"""
-    # Check cache first
-    cache_key = get_cache_key(lat, lon, date)
-    if cache_key in weather_cache:
-        cached_data, timestamp = weather_cache[cache_key]
-        if is_cache_valid(timestamp):
-            print(f"✅ Using cached weather data for {cache_key}")
-            return cached_data
-    
-    weather_sources = []
-    
-    # Define API functions to call concurrently
-    api_functions = [
-        (get_openmeteo_weather, "Open-Meteo"),
-        (get_openweathermap_weather, "OpenWeatherMap")
-    ]
-    
-    # Use ThreadPoolExecutor for concurrent API calls
-    with ThreadPoolExecutor(max_workers=3, thread_name_prefix="weather_api") as executor:
-        # Submit all API calls
-        future_to_api = {}
-        for api_func, api_name in api_functions:
-            if api_func == get_openweathermap_weather:
-                future = executor.submit(api_func, lat, lon)
-            else:
-                future = executor.submit(api_func, lat, lon, date)
-            future_to_api[future] = api_name
-        
-        # Collect results as they complete (with timeout)
-        for future in as_completed(future_to_api, timeout=20):
-            api_name = future_to_api[future]
-            try:
+# Debug route to view recent errors
+@app.route('/debug', methods=['GET'])
+def debug():
+    return jsonify({"recent_errors": recent_errors})
                 data = future.result(timeout=5)  # Individual timeout
                 if data and isinstance(data, dict):
                     weather_sources.append(data)
