@@ -39,19 +39,11 @@ export type AdvisoryResponse = {
   error?: string
 }
 
-const API_BASE = 'https://cropadvisory.onrender.com'
+const API_BASE = 'https://crop-advisory-gneg.onrender.com'
 
 export async function fetchCropAdvisory(body: AdvisoryRequest): Promise<AdvisoryResponse> {
   const base = API_BASE.replace(/\/$/, '')
   const attempts: Array<{ url: string; payload: any }> = [
-    {
-      url: `${base}/api/crop-advisory`,
-      payload: {
-        location: { latitude: body.lat, longitude: body.lon },
-        additionalInfo: body.past_crop ? { previousCrop: body.past_crop } : undefined,
-        date: body.date || undefined,
-      }
-    },
     {
       url: `${base}/recommend`,
       payload: {
