@@ -20,10 +20,10 @@ export default function Header({ points }: { points: number }) {
     <header className="header">
       <div className="header-container">
         <div className="header-logo">
-          <Link to="/">AgriAssist</Link>
+          <Link to="/">Agro Mitra</Link>
         </div>
         <nav className="header-nav">
-          <NavLink to="/soil" label="Soil Health" icon="🌱" />
+          <NavLink to="/soil" label="Fertilizer Recommendation" icon="🌱" />
           <NavLink to="/weather" label="Weather" icon="🌤️" />
           <NavLink to="/pests" label="Pest Detect" icon="🐛" />
           <NavLink to="/market" label="Market Prices" icon="💰" />
