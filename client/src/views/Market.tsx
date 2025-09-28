@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { trackEvent } from '../lib/analytics'
 import { fetchAgmarknetPrices, agmarkEnvStatus, type LivePrice } from '../lib/marketProviders'
+import { motion } from 'framer-motion'
 
 const COMMS = ['Wheat','Rice','Maize','Soybean','Cotton','Potato','Tomato']
 const STATES = [
@@ -19,7 +20,9 @@ export default function Market(){
 	const LS_KEY = 'market.filters.v1'
 	const [envWarn, setEnvWarn] = useState<string[]>([])
 
-	// Load saved filters on mount and capture env warnings
+	function fmt(n?: number) { return typeof n==='number' ? `₹ ${n}` : '—' }
+
+	// Restore saved filters & check env
 	useEffect(()=>{
 		try {
 			const raw = localStorage.getItem(LS_KEY)
@@ -36,18 +39,21 @@ export default function Market(){
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	},[])
 
-	// Persist filters whenever they change
+	// Save filters to localStorage
 	useEffect(()=>{
 		try {
+			const userSetFilters = Boolean(stateInput || districtInput || marketInput);
 			localStorage.setItem(LS_KEY, JSON.stringify({
 				commodity: selectedCommodity,
-				state: stateInput,
+				state: stateInput,        // ✅ FIXED: save state as well
 				district: districtInput,
 				market: marketInput,
+				userSetFilters
 			}))
 		} catch {}
 	},[selectedCommodity, stateInput, districtInput, marketInput])
 
+	// Detect user location
 	useEffect(()=>{
 		if (!navigator.geolocation) return
 		navigator.geolocation.getCurrentPosition(async (pos)=>{
@@ -62,6 +68,7 @@ export default function Market(){
 		}, ()=>{})
 	}, [])
 
+	// Load live prices
 	const loadLive = async () => {
 		setLiveLoading(true); setLiveError(null)
 		try {
@@ -69,13 +76,20 @@ export default function Market(){
 			if (!env.ok) {
 				throw new Error(`Missing env: ${env.missing.join(', ')}. Add them to .env and restart dev server.`)
 			}
-				const userSetFilters = Boolean(stateInput || districtInput || marketInput)
-				const effectiveState = (userSetFilters ? stateInput : (stateInput || addr.state))?.trim() || undefined
-				const effectiveDistrict = (userSetFilters ? districtInput : (districtInput || addr.district))?.trim() || undefined
-				const effectiveMarket = (userSetFilters ? marketInput : marketInput)?.trim() || undefined
-				const data = await fetchAgmarknetPrices({ commodity: selectedCommodity || undefined, state: effectiveState, district: effectiveDistrict, market: effectiveMarket, limit: 50, strict: userSetFilters })
+			const userSetFilters = Boolean(stateInput || districtInput || marketInput)
+			const effectiveState = (userSetFilters ? stateInput : (stateInput || addr.state))?.trim() || undefined
+			const effectiveDistrict = (userSetFilters ? districtInput : (districtInput || addr.district))?.trim() || undefined
+			const effectiveMarket = marketInput?.trim() || undefined   // ✅ simplified
+			const data = await fetchAgmarknetPrices({ 
+				commodity: selectedCommodity || undefined, 
+				state: effectiveState, 
+				district: effectiveDistrict, 
+				market: effectiveMarket, 
+				limit: 50, 
+				strict: userSetFilters 
+			})
 			setLive(data)
-				trackEvent('market_live_fetch', { len: data.length, commodity: selectedCommodity, state: effectiveState, district: effectiveDistrict, market: effectiveMarket })
+			trackEvent('market_live_fetch', { len: data.length, commodity: selectedCommodity, state: effectiveState, district: effectiveDistrict, market: effectiveMarket })
 		} catch (e:any) {
 			setLiveError(String(e?.message || e))
 		} finally {
@@ -83,25 +97,15 @@ export default function Market(){
 		}
 	}
 
-	// Refresh when geolocated address changes
-	useEffect(()=>{ loadLive() }, [addr.state, addr.district])
-
-	// Debounced auto-refresh on manual input changes and commodity selection
-	useEffect(()=>{
-		const t = setTimeout(()=>{ loadLive() }, 500)
-		return ()=> clearTimeout(t)
-	}, [selectedCommodity, stateInput, districtInput, marketInput])
-
 	return (
-		<div className="grid">
-			<section className="card">
+		<motion.div className="grid" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 16 }} transition={{ duration: 0.4 }}>
+			<motion.section className="card" initial={{ scale: 0.97, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.5 }}>
 				<h2>Market Prices</h2>
 				<div className="row" style={{gap:8, marginBottom:8}}>
 					<div className="muted" style={{marginLeft:'auto'}}>{[addr.district, addr.state].filter(Boolean).join(', ') || 'Location unknown'}</div>
 				</div>
-
 				<div className="card">
-							<div className="row">
+					<div className="row">
 						<div className="col">
 							<label>Commodity</label>
 							<select value={selectedCommodity} onChange={e=>setSelectedCommodity(e.target.value)}>
@@ -109,36 +113,35 @@ export default function Market(){
 									<option key={c} value={c}>{c}</option>)}
 							</select>
 						</div>
-								<div className="col">
-									<label>State (optional)</label>
-									<input list="states" value={stateInput} onChange={e=>setStateInput(e.target.value)} placeholder={addr.state || 'e.g., Maharashtra'} />
-									<datalist id="states">
-										{STATES.map(s => <option key={s} value={s} />)}
-									</datalist>
-								</div>
-								<div className="col">
-									<label>District (optional)</label>
-									<input value={districtInput} onChange={e=>setDistrictInput(e.target.value)} placeholder={addr.district || 'e.g., Pune'} />
-								</div>
-								<div className="col">
-									<label>Market (optional)</label>
-									<input value={marketInput} onChange={e=>setMarketInput(e.target.value)} placeholder="e.g., Lasalgaon" />
-								</div>
+						<div className="col">
+							<label>State (optional)</label>
+							<input list="states" value={stateInput} onChange={e=>setStateInput(e.target.value)} placeholder={addr.state || 'e.g., Maharashtra'} />
+							<datalist id="states">
+								{STATES.map(s => <option key={s} value={s} />)}
+							</datalist>
+						</div>
+						<div className="col">
+							<label>District (optional)</label>
+							<input value={districtInput} onChange={e=>setDistrictInput(e.target.value)} placeholder={addr.district || 'e.g., Pune'} />
+						</div>
+						<div className="col">
+							<label>Market (optional)</label>
+							<input value={marketInput} onChange={e=>setMarketInput(e.target.value)} placeholder="e.g., Lasalgaon" />
+						</div>
 						<div className="col" style={{alignSelf:'end'}}>
 							<button onClick={loadLive}>Refresh</button>
-									<button className="secondary" style={{marginLeft:8}} onClick={()=>{ setStateInput(''); setDistrictInput(''); setMarketInput(''); loadLive() }}>Use my location</button>
-									<button className="secondary" style={{marginLeft:8}} onClick={()=>{ setStateInput(''); setDistrictInput(''); setMarketInput(''); }}>Clear filters</button>
+							<button className="secondary" style={{marginLeft:8}} onClick={()=>{ setStateInput(''); setDistrictInput(''); setMarketInput(''); loadLive() }}>Use my location</button>
+							<button className="secondary" style={{marginLeft:8}} onClick={()=>{ setStateInput(''); setDistrictInput(''); setMarketInput(''); }}>Clear filters</button>
 						</div>
 					</div>
-							{envWarn.length>0 && (
-								<div className="muted" style={{marginBottom:8}}>
-									{envWarn.map((w,i)=>(<div key={i}>Warning: {w}</div>))}
-								</div>
-							)}
-							{liveLoading && <p className="muted">Loading live prices…</p>}
-							{liveError && <p className="warning">{liveError}</p>}
-							{!liveLoading && !liveError && live.length===0 && <p className="muted">No live prices found. Check API key/resource, try fewer filters, or click "Clear filters".</p>}
-
+					{envWarn.length>0 && (
+						<div className="muted" style={{marginBottom:8}}>
+							{envWarn.map((w,i)=>(<div key={i}>Warning: {w}</div>))}
+						</div>
+					)}
+					{liveLoading && <p className="muted">Loading live prices…</p>}
+					{liveError && <p className="warning">{liveError}</p>}
+					{!liveLoading && !liveError && live.length===0 && <p className="muted">No live prices found. Check API key/resource, try fewer filters, or click "Clear filters".</p>}
 					<div className="grid">
 						{live.map((p,i)=> (
 							<div className="card" key={i}>
@@ -151,11 +154,7 @@ export default function Market(){
 						))}
 					</div>
 				</div>
-			</section>
-		</div>
+			</motion.section>
+		</motion.div>
 	)
 }
-
-function fmt(n?: number) { return typeof n==='number' ? `₹ ${n}` : '—' }
-
-

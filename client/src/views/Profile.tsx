@@ -1,70 +1,137 @@
-import { useEffect, useState } from 'react'
-import { ensureProfileBootstrap, getProfile, syncProfile } from '../lib/profile'
-import { getEvidenceStatus } from '../lib/review'
-import { questTitleById } from '../lib/quests'
+import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import { ensureProfileBootstrap, getProfile, syncProfile } from '../lib/profile';
+import { getEvidenceStatus } from '../lib/review';
+import { questTitleById } from '../lib/quests';
 
-export default function Profile(){
-  const [pts, setPts] = useState(getProfile().points)
-  const [review, setReview] = useState<Record<string, any>>({})
-  const [quests, setQuests] = useState<string[]>(getProfile().completedQuests)
-  const [syncing, setSyncing] = useState(false)
-  const [msg, setMsg] = useState<string|null>(null)
+export default function Profile() {
+  const [pts, setPts] = useState(getProfile().points);
+  const [review, setReview] = useState<Record<string, any>>({});
+  const [quests, setQuests] = useState<string[]>(getProfile().completedQuests);
+  const [syncing, setSyncing] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
 
-  useEffect(()=>{
-    const h = (e: any)=>{
-      setPts(e?.detail?.profile?.points ?? getProfile().points)
-      setQuests(e?.detail?.profile?.completedQuests ?? getProfile().completedQuests)
-    }
-    window.addEventListener('profile:changed', h)
+  useEffect(() => {
+    const h = (e: any) => {
+      setPts(e?.detail?.profile?.points ?? getProfile().points);
+      setQuests(e?.detail?.profile?.completedQuests ?? getProfile().completedQuests);
+    };
+    window.addEventListener('profile:changed', h);
+
     // Initial cloud bootstrap
-    void ensureProfileBootstrap().then(()=>{
-      const p = getProfile()
-      setPts(p.points)
-      setQuests(p.completedQuests)
-      const run = async()=>{ try{ const r = await getEvidenceStatus(getProfile().id); setReview(r.byQuest||{}) }catch{} }
-      run()
-    })
-    return ()=> window.removeEventListener('profile:changed', h)
-  }, [])
+    void ensureProfileBootstrap().then(() => {
+      const p = getProfile();
+      setPts(p.points);
+      setQuests(p.completedQuests);
 
-  const doSync = async ()=>{
-    setSyncing(true); setMsg(null)
-    const ok = await syncProfile()
-    setSyncing(false)
-    setMsg(ok ? 'Synced with cloud.' : 'Saved locally. Will sync when online.')
-  }
+      // Fetch review status
+      const run = async () => {
+        try {
+          const r = await getEvidenceStatus(getProfile().id);
+          setReview(r.byQuest || {});
+        } catch {}
+      };
+      run();
+    });
+
+    return () => window.removeEventListener('profile:changed', h);
+  }, []);
+
+  const doSync = async () => {
+    setSyncing(true);
+    setMsg(null);
+    const ok = await syncProfile();
+    setSyncing(false);
+    setMsg(ok ? '✅ Synced with cloud.' : '⚠️ Saved locally. Will sync when online.');
+  };
 
   return (
-    <div className="grid">
-      <section className="card">
-        <h2>Farmer Profile</h2>
-        <p className="muted">Your points and progress. Stored locally and synced when possible.</p>
-        <div style={{display:'flex', gap:12, alignItems:'center', marginTop:8}}>
-          <span className="tag success">⭐ Points: {pts}</span>
-          <button className="secondary" onClick={doSync} disabled={syncing}>{syncing ? 'Syncing…' : 'Sync now'}</button>
-          {msg && <span className="tag info">{msg}</span>}
+    <motion.div
+      className="profile-container"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 16 }}
+      transition={{ duration: 0.4 }}
+    >
+      <motion.div
+        className="card"
+        initial={{ scale: 0.97, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="profile-header">
+          <h2>Profile</h2>
+          <p className="muted">
+            Your points and progress. Stored locally and synced when possible.
+          </p>
         </div>
-        {Object.keys(review).length>0 && (
-          <div style={{marginTop:8}}>
-            <h3>Evidence Review Status</h3>
-            <ul>
-              {Object.entries(review).map(([qid, v]: any)=> (
-                <li key={qid}>{qid}: {v.status}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </section>
-      <section className="card">
+        <div className="profile-stats">
+          <span className="tag success">⭐ Points: {pts}</span>
+          <motion.button
+            className="secondary"
+            onClick={doSync}
+            disabled={syncing}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            {syncing ? 'Syncing…' : 'Sync now'}
+          </motion.button>
+          {msg && (
+            <span
+              className={`tag ${msg.includes('✅') ? 'success' : 'warning'}`}
+            >
+              {msg}
+            </span>
+          )}
+        </div>
+      </motion.div>
+
+      <motion.div
+        className="card"
+        initial={{ scale: 0.97, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+      >
         <h3>Completed Quests</h3>
         {quests.length === 0 ? (
-          <p className="muted">No quests completed yet.</p>
+          <p className="muted">No quests completed yet. 🚀 Start your journey!</p>
         ) : (
-          <ul>
-            {quests.map(q=> (<li key={q}>{questTitleById(q)}</li>))}
-          </ul>
+          <motion.ul
+            style={{ listStyle: 'none', paddingLeft: 0, margin: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            {quests.map((q) => (
+              <motion.li
+                key={q}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                style={{
+                  padding: '6px 0',
+                  borderBottom: '1px solid var(--border-color)',
+                }}
+              >
+                <b>{questTitleById(q)}</b>
+                {review[q] && (
+                  <span
+                    className={`tag ${
+                      review[q].status === 'approved'
+                        ? 'success'
+                        : review[q].status === 'pending'
+                        ? 'warning'
+                        : 'info'
+                    }`}
+                    style={{ marginLeft: 8 }}
+                  >
+                    {review[q].status}
+                  </span>
+                )}
+              </motion.li>
+            ))}
+          </motion.ul>
         )}
-      </section>
-    </div>
-  )
+      </motion.div>
+    </motion.div>
+  );
 }
