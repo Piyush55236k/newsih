@@ -1,5 +1,10 @@
 flask
 flask-cors
+requests
+urllib3
+gunicorn
+flask
+flask-cors
 gunicorn
 requests
 urllib3

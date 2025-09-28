@@ -1,4 +1,5 @@
 
+
 from flask import Flask, request, jsonify, render_template, make_response
 from flask_cors import CORS
 import requests
@@ -8,14 +9,50 @@ import random
 import math
 import os
 import time
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+app = Flask(__name__)
+CORS(app, origins=["http://localhost:5173", "https://newsih-gtmo.vercel.app", "*"], supports_credentials=True)
+
+crop_data = []
+try:
+    with open("crops.json", "r") as f:
+        crop_data = json.load(f)
+except Exception as e:
+    print(f"❌ Failed to load crops.json: {e}")
+
+weather_cache = {}
+soil_cache = {}
+CACHE_DURATION = 300  # 5 minutes in seconds
+
+def is_cache_valid(timestamp):
+    return time.time() - timestamp < CACHE_DURATION
+
+def get_cache_key(lat, lon, extra=None):
+    lat_rounded = round(lat, 2)
+    lon_rounded = round(lon, 2)
+    if extra:
+        return f"{lat_rounded},{lon_rounded},{extra}"
+    return f"{lat_rounded},{lon_rounded}"
+
 recent_errors = []
-            
+
+def get_soilgrids_data(lat, lon):
+    """Enhanced SoilGrids API with concurrent property fetching"""
+    try:
+        properties = ['clay', 'sand', 'silt']
+        soil_data = {}
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        api_session = requests.Session()
+        with ThreadPoolExecutor(max_workers=3, thread_name_prefix="soil_api") as executor:
+            future_to_prop = {}
             for prop in properties:
                 url = "https://rest.isric.org/soilgrids/v2.0/properties/query"
                 params = {'lon': lon, 'lat': lat, 'property': prop, 'depth': '0-5cm', 'value': 'mean'}
                 future = executor.submit(api_session.get, url, params=params, timeout=12)
                 future_to_prop[future] = prop
-            
             # Collect results
             for future in as_completed(future_to_prop, timeout=15):
                 prop = future_to_prop[future]
@@ -33,7 +70,6 @@ recent_errors = []
                         print(f"⚠️ SoilGrids {prop} API error: {response.status_code}")
                 except Exception as e:
                     print(f"⚠️ SoilGrids {prop} failed: {e}")
-        
         # Validate we have enough data
         if len(soil_data) >= 2:
             print(f"✅ SoilGrids data: {soil_data}")
@@ -41,7 +77,6 @@ recent_errors = []
         else:
             print(f"⚠️ SoilGrids insufficient data: {soil_data}")
             return None
-            
     except Exception as e:
         print(f"❌ SoilGrids failed: {e}")
         return None
@@ -465,7 +500,7 @@ def recommend_crop_full(soil_data, past_crop=None, weather=None, show_all=False)
             
         # Calculate rainfall impact
         if weather and weather.get('rainfall') is not None:
-            is_irrigated = bool(data.get('irrigation_available', True))  # Default to True for safety
+            is_irrigated = True  # Default to True for safety
             rainfall_impact = calculate_rainfall_impact(
                 weather['rainfall'],
                 crop.get('Crop', ''),
