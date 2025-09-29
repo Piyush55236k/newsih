@@ -16,7 +16,7 @@ CORS(
 @app.route('/recommend', methods=['POST', 'OPTIONS'])
 def recommend():
     if request.method == 'OPTIONS':
-        return jsonify({"status": "ok"}), 200
+        return '', 200
 
     data = request.get_json()
     if not data:
@@ -27,8 +27,19 @@ def recommend():
 
     if not crop or not soil:
         return jsonify({'status': 'error', 'message': 'Missing crop or soil data'}), 400
+
     if not isinstance(crop, str) or not isinstance(soil, dict):
         return jsonify({'status': 'error', 'message': 'Invalid input format'}), 400
+
+    # ✅ Validate soil fields
+    required_fields = ["N","P","K","S","Zn","Fe","Cu","Mn","B","OC","pH","EC"]
+    for f in required_fields:
+        if f not in soil:
+            return jsonify({'status': 'error', 'message': f'Missing field: {f}'}), 400
+        try:
+            soil[f] = float(soil[f])
+        except Exception:
+            return jsonify({'status': 'error', 'message': f'Invalid value for {f}, must be a number'}), 400
 
     try:
         recs, doses = fertilizer_recommendation(crop, soil)
