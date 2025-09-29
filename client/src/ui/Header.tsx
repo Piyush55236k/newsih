@@ -39,6 +39,7 @@ export default function Header({ points }: { points: number }) {
     return () => document.removeEventListener('click', onDocClick);
   }, [langOpen]);
 
+  // Responsive: show hamburger only on mobile, slide menu from top, no overlays
   return (
     <header className="header">
       <div className="header-container">
@@ -52,15 +53,11 @@ export default function Header({ points }: { points: number }) {
             <span className="logo-text">🌱 Agro Mitra</span>
           </Link>
         </motion.div>
-        
         <nav className="header-nav">
-          <NavLink to="/" label="Home Page" icon="🏠" />
-          <NavLink to="/fertilizer" label="Fertilizer Recommendation" icon="🌱" />
-          <NavLink to="/weather" label="Weather" icon="🌤️" />
+          <NavLink to="/" label="Home" icon="🏠" />
           <NavLink to="/shop" label="Shop" icon="🛒" />
         </nav>
-        
-        <div className="header-actions">
+        <div className="header-actions mobile-hide">
           <motion.div
             className="points-badge"
             initial={{ scale: 0 }}
@@ -79,8 +76,6 @@ export default function Header({ points }: { points: number }) {
               <span className="points-text">{points} pts</span>
             </span>
           </motion.div>
-          
-          {/* Language Selector (desktop) */}
           <div className="lang-selector" style={{ position: 'relative' }}>
             <motion.button
               className="secondary"
@@ -94,143 +89,104 @@ export default function Header({ points }: { points: number }) {
               {currentLangLabel}
               <span style={{ marginLeft: 6, opacity: 0.7 }}>▾</span>
             </motion.button>
-            <AnimatePresence>
-              {langOpen && (
-                <motion.ul
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 6 }}
-                  transition={{ duration: 0.15 }}
-                  role="listbox"
-                  className="card"
-                  style={{
-                    position: 'absolute',
-                    right: 0,
-                    top: '110%',
-                    minWidth: 220,
-                    maxHeight: 260,
-                    overflowY: 'auto',
-                    padding: 8,
-                    zIndex: 20,
-                    background: 'var(--bg-elevated, #ffffff)',
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
-                    border: '1px solid var(--border-color, #eee)'
-                  }}
-                >
-                  {LANGUAGES.map((l) => (
-                    <li key={l.code}>
-                      <motion.button
-                        className={l.code === lang ? 'secondary' : ''}
-                        style={{
-                          width: '100%',
-                          textAlign: 'left',
-                          padding: '8px 10px',
-                          borderRadius: 8,
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 8,
-                          background: 'transparent',
-                          color: 'var(--text-primary)'
-                        }}
-                        whileHover={{ backgroundColor: 'var(--green-50)' }}
-                        onClick={() => {
-                          setLang(l.code);
-                          setLangOpen(false);
-                          // Force reload so the whole app reflects language immediately
-                          setTimeout(() => applyLanguage(l.code, { reload: true }), 10);
-                        }}
-                      >
-                        <span style={{ fontSize: 16 }}>🌐</span>
-                        <span>{l.label}</span>
-                        {l.code === lang && (
-                          <span style={{ marginLeft: 'auto' }}>✓</span>
-                        )}
-                      </motion.button>
-                    </li>
-                  ))}
-                </motion.ul>
-              )}
-            </AnimatePresence>
+            {langOpen && (
+              <ul
+                role="listbox"
+                className="card"
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: '110%',
+                  minWidth: 180,
+                  maxHeight: 220,
+                  overflowY: 'auto',
+                  padding: 8,
+                  zIndex: 20,
+                  background: 'var(--bg-elevated, #ffffff)',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+                  border: '1px solid var(--border-color, #eee)'
+                }}
+              >
+                {LANGUAGES.map((l) => (
+                  <li key={l.code}>
+                    <button
+                      className={l.code === lang ? 'secondary' : ''}
+                      style={{
+                        width: '100%',
+                        textAlign: 'left',
+                        padding: '8px 10px',
+                        borderRadius: 8,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        background: 'transparent',
+                        color: 'var(--text-primary)'
+                      }}
+                      onClick={() => {
+                        setLang(l.code);
+                        setLangOpen(false);
+                        setTimeout(() => applyLanguage(l.code, { reload: true }), 10);
+                      }}
+                    >
+                      <span style={{ fontSize: 16 }}>🌐</span>
+                      <span>{l.label}</span>
+                      {l.code === lang && (
+                        <span style={{ marginLeft: 'auto' }}>✓</span>
+                      )}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
-
           <NavLink to="/profile" label="Profile" icon="🧑‍🌾" />
-          
-          <motion.button 
-            className="mobile-menu-toggle" 
-            onClick={() => setMenuOpen(!menuOpen)}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            aria-label="Toggle mobile menu"
-          >
-            <motion.span
-              animate={{ rotate: menuOpen ? 45 : 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              {menuOpen ? '✕' : '☰'}
-            </motion.span>
-          </motion.button>
         </div>
+        <button 
+          className="mobile-menu-toggle"
+          onClick={() => setMenuOpen(!menuOpen)}
+          aria-label="Toggle mobile menu"
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: 8 }}
+        >
+          <span style={{ fontSize: 28 }}>{menuOpen ? '✕' : '☰'}</span>
+        </button>
       </div>
-      
-      <AnimatePresence>
-        {menuOpen && (
-          <motion.div
-            className="mobile-menu"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-          >
-            <nav className="mobile-nav">
-              <div className="mobile-nav-section">
-                <h4>Main</h4>
-                <NavLink to="/" label="Home Page" icon="🏠" onClick={() => setMenuOpen(false)} />
-              </div>
-              <div className="mobile-nav-section">
-                <h4>Core Features</h4>
-                <NavLink to="/fertilizer" label="Fertilizer Recommendation" icon="🌱" onClick={() => setMenuOpen(false)} />
-                <NavLink to="/fertilizer" label="Fertilizer Recommendation" icon="🌱" onClick={() => setMenuOpen(false)} />
-                <NavLink to="/weather" label="Weather" icon="🌤️" onClick={() => setMenuOpen(false)} />
-                <NavLink to="/pests" label="Pest Detection" icon="🐛" onClick={() => setMenuOpen(false)} />
-                <NavLink to="/market" label="Market Prices" icon="💰" onClick={() => setMenuOpen(false)} />
-                <NavLink to="/shop" label="Shop" icon="🛒" onClick={() => setMenuOpen(false)} />
-              </div>
-              <div className="mobile-nav-section">
-                <h4>Language</h4>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span>🌐</span>
-                  <select
-                    value={lang}
-                    onChange={(e) => {
-                      const value = e.target.value
-                      setLang(value);
-                      // Reload to apply across the site
-                      setTimeout(() => applyLanguage(value, { reload: true }), 10);
-                    }}
-                    aria-label="Select language"
-                    style={{ flex: 1 }}
-                  >
-                    {LANGUAGES.map((l) => (
-                      <option key={l.code} value={l.code}>{l.label}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div className="mobile-nav-section">
-                <h4>More Features</h4>
-                <NavLink to="/advisory" label="Crop Advisory" icon="🌾" />
-                <NavLink to="/community" label="Community" icon="👥" />
-                <NavLink to="/quests" label="Quests" icon="🎯" />
-              </div>
-              <div className="mobile-nav-section">
-                <h4>Account</h4>
-                <NavLink to="/profile" label="Profile" icon="🧑‍🌾" onClick={() => setMenuOpen(false)} />
-                <NavLink to="/feedback" label="Feedback" icon="💬" onClick={() => setMenuOpen(false)} />
-              </div>
-            </nav>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Mobile menu: slide down, no overlay, dynamic, attractive */}
+      <div className={`mobile-menu${menuOpen ? ' open' : ''}`} style={{ display: menuOpen ? 'block' : 'none', position: 'fixed', top: 60, left: 0, right: 0, background: 'var(--panel-bg-glass)', zIndex: 99, borderRadius: '0 0 18px 18px', boxShadow: '0 8px 32px rgba(31,38,135,0.12)', transition: 'all 0.3s', padding: 0 }}>
+        <nav className="mobile-nav" style={{ padding: 0 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8, padding: 16 }}>
+            <span className="tag success" style={{ marginBottom: 4 }}><span className="star-icon">⭐</span> <span className="points-text">{points} pts</span></span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
+              <span>🌐</span>
+              <select
+                value={lang}
+                onChange={e => {
+                  setLang(e.target.value);
+                  setTimeout(() => applyLanguage(e.target.value, { reload: true }), 10);
+                }}
+                aria-label="Select language"
+                style={{ flex: 1, borderRadius: 8, padding: '8px 10px', fontSize: 16 }}
+              >
+                {LANGUAGES.map(l => (
+                  <option key={l.code} value={l.code}>{l.label}</option>
+                ))}
+              </select>
+            </span>
+            <NavLink to="/profile" label="Profile" icon="🧑‍🌾" onClick={() => setMenuOpen(false)} />
+          </div>
+          <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+            <li><NavLink to="/" label="Home" icon="🏠" onClick={() => setMenuOpen(false)} /></li>
+            <li><NavLink to="/shop" label="Shop" icon="🛒" onClick={() => setMenuOpen(false)} /></li>
+            <li><NavLink to="/fertilizer" label="Fertilizer" icon="🌱" onClick={() => setMenuOpen(false)} /></li>
+            <li><NavLink to="/weather" label="Weather" icon="🌤️" onClick={() => setMenuOpen(false)} /></li>
+            <li><NavLink to="/advisory" label="Advisory" icon="🌾" onClick={() => setMenuOpen(false)} /></li>
+            <li><NavLink to="/community" label="Community" icon="👥" onClick={() => setMenuOpen(false)} /></li>
+            <li><NavLink to="/quests" label="Quests" icon="🎯" onClick={() => setMenuOpen(false)} /></li>
+            <li><NavLink to="/market" label="Market" icon="💰" onClick={() => setMenuOpen(false)} /></li>
+            <li><NavLink to="/pests" label="Pests" icon="🐛" onClick={() => setMenuOpen(false)} /></li>
+            <li><NavLink to="/feedback" label="Feedback" icon="💬" onClick={() => setMenuOpen(false)} /></li>
+          </ul>
+        </nav>
+      </div>
     </header>
   );
 }
