@@ -16,19 +16,19 @@ CORS(
 @app.route('/recommend', methods=['POST', 'OPTIONS'])
 def recommend():
     if request.method == 'OPTIONS':
-        return '', 200
+        return jsonify({"status": "ok"}), 200
 
     data = request.get_json()
     if not data:
-        return jsonify({'error': 'Invalid JSON body'}), 400
+        return jsonify({'status': 'error', 'message': 'Invalid JSON body'}), 400
 
     crop = data.get('crop')
     soil = data.get('soil')
 
     if not crop or not soil:
-        return jsonify({'error': 'Missing crop or soil data'}), 400
-    if not isinstance(crop, str) or not isinstance(soil, str):
-        return jsonify({'error': 'Invalid input format'}), 400
+        return jsonify({'status': 'error', 'message': 'Missing crop or soil data'}), 400
+    if not isinstance(crop, str) or not isinstance(soil, dict):
+        return jsonify({'status': 'error', 'message': 'Invalid input format'}), 400
 
     try:
         recs, doses = fertilizer_recommendation(crop, soil)
@@ -41,6 +41,7 @@ def recommend():
         })
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080, debug=True)
