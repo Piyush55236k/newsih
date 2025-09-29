@@ -57,6 +57,7 @@ export default function Header({ points }: { points: number }) {
           <NavLink to="/" label="Home Page" icon="🏠" />
           <NavLink to="/soil" label="Fertilizer Recommendation" icon="🌱" />
           <NavLink to="/weather" label="Weather" icon="🌤️" />
+          <NavLink to="/shop" label="Shop" icon="🛒" />
         </nav>
         
         <div className="header-actions">
@@ -70,8 +71,8 @@ export default function Header({ points }: { points: number }) {
               damping: 15,
               delay: 0.3 
             }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
           >
             <span className="tag success">
               <span className="star-icon">⭐</span>
@@ -191,6 +192,7 @@ export default function Header({ points }: { points: number }) {
                 <NavLink to="/weather" label="Weather" icon="🌤️" onClick={() => setMenuOpen(false)} />
                 <NavLink to="/pests" label="Pest Detection" icon="🐛" onClick={() => setMenuOpen(false)} />
                 <NavLink to="/market" label="Market Prices" icon="💰" onClick={() => setMenuOpen(false)} />
+                <NavLink to="/shop" label="Shop" icon="🛒" onClick={() => setMenuOpen(false)} />
               </div>
               <div className="mobile-nav-section">
                 <h4>Language</h4>

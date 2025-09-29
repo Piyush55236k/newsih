@@ -14,6 +14,7 @@ import Profile from './views/Profile'
 import Admin from './views/Admin'
 import CropAdvisory from './views/CropAdvisory'
 import OnboardingPage from './views/OnboardingPage'
+import Shop from './views/Shop'
 import './ui/styles.css'
 
 const router = createBrowserRouter([
@@ -33,6 +34,7 @@ const router = createBrowserRouter([
 			{ path: 'quests', element: <Quests /> }
 			,{ path: 'advisory', element: <CropAdvisory /> }
 			,{ path: 'features', element: <OnboardingPage /> }
+			,{ path: 'shop', element: <Shop /> }
 			,{ path: 'admin', element: <Admin /> }
 		]
 	}
