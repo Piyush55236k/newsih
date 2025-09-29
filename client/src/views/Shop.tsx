@@ -30,42 +30,42 @@ interface Address {
 // Product database
 const PRODUCTS: Product[] = [
   // FARM EQUIPMENT & TOOLS
-  { id: 'shovel-1', name: 'Heavy Duty Shovel', category: 'equipment', price: 450, image: '/shop/shovel.jpg', description: 'Durable steel shovel for digging and soil work', inStock: true },
-  { id: 'rake-1', name: 'Garden Rake', category: 'equipment', price: 320, image: '/shop/rake.jpg', description: 'Multi-purpose rake for soil preparation', inStock: true },
-  { id: 'hoe-1', name: 'Farming Hoe', category: 'equipment', price: 280, image: '/shop/hoe.jpg', description: 'Traditional hoe for weeding and cultivation', inStock: true },
-  { id: 'sickle-1', name: 'Sharp Sickle', category: 'equipment', price: 180, image: '/shop/sickle.jpg', description: 'Curved blade sickle for harvesting crops', inStock: true },
-  { id: 'sprinkler-1', name: 'Rotary Sprinkler', category: 'equipment', price: 1250, image: '/shop/sprinkler.jpg', description: 'Automatic rotary sprinkler system', inStock: true },
-  { id: 'pump-1', name: 'Water Pump 1HP', category: 'equipment', price: 8500, image: '/shop/pump.jpg', description: 'Electric water pump for irrigation', inStock: true },
+  { id: 'shovel-1', name: 'Heavy Duty Shovel', category: 'equipment', price: 450, image: '/shop-assests/spade.jpg', description: 'Durable steel shovel for digging and soil work', inStock: true },
+  { id: 'rake-1', name: 'Garden Rake', category: 'equipment', price: 320, image: '/shop-assests/trowels.jpg', description: 'Multi-purpose rake for soil preparation', inStock: true },
+  { id: 'hoe-1', name: 'Farming Hoe', category: 'equipment', price: 280, image: '/shop-assests/hoes.jpg', description: 'Traditional hoe for weeding and cultivation', inStock: true },
+  { id: 'sickle-1', name: 'Sharp Sickle', category: 'equipment', price: 180, image: '/shop-assests/sickle.jpg', description: 'Curved blade sickle for harvesting crops', inStock: true },
+  { id: 'sprinkler-1', name: 'Rotary Sprinkler', category: 'equipment', price: 1250, image: '/shop-assests/sprinklers.jpg', description: 'Automatic rotary sprinkler system', inStock: true },
+  { id: 'pump-1', name: 'Water Pump 1HP', category: 'equipment', price: 8500, image: '/shop-assests/pressure sprayer pump.jpg', description: 'Electric water pump for irrigation', inStock: true },
 
   // SEEDS & PLANTING MATERIAL
-  { id: 'rice-seeds', name: 'Basmati Rice Seeds', category: 'seeds', price: 120, image: '/shop/rice-seeds.jpg', description: 'Premium quality basmati rice seeds - 1kg', inStock: true },
-  { id: 'wheat-seeds', name: 'Wheat Seeds', category: 'seeds', price: 85, image: '/shop/wheat-seeds.jpg', description: 'High yield wheat variety seeds - 1kg', inStock: true },
-  { id: 'tomato-seeds', name: 'Hybrid Tomato Seeds', category: 'seeds', price: 450, image: '/shop/tomato-seeds.jpg', description: 'Disease resistant hybrid tomato seeds - 100g', inStock: true },
-  { id: 'potato-seeds', name: 'Potato Tubers', category: 'seeds', price: 45, image: '/shop/potato-seeds.jpg', description: 'Certified potato seed tubers - 1kg', inStock: true },
-  { id: 'mango-plants', name: 'Mango Saplings', category: 'seeds', price: 250, image: '/shop/mango-plant.jpg', description: 'Grafted mango saplings - 1 plant', inStock: true },
-  { id: 'watermelon-seeds', name: 'Watermelon Seeds', category: 'seeds', price: 350, image: '/shop/watermelon-seeds.jpg', description: 'Sweet watermelon hybrid seeds - 50g', inStock: true },
+  { id: 'rice-seeds', name: 'Basmati Rice Seeds', category: 'seeds', price: 120, image: '/shop-assests/rice seeds.jpg', description: 'Premium quality basmati rice seeds - 1kg', inStock: true },
+  { id: 'wheat-seeds', name: 'Wheat Seeds', category: 'seeds', price: 85, image: '/shop-assests/wheat seeds.jpg', description: 'High yield wheat variety seeds - 1kg', inStock: true },
+  { id: 'tomato-seeds', name: 'Hybrid Tomato Seeds', category: 'seeds', price: 450, image: '/shop-assests/tomato seeds.jpg', description: 'Disease resistant hybrid tomato seeds - 100g', inStock: true },
+  { id: 'potato-seeds', name: 'Potato Tubers', category: 'seeds', price: 45, image: '/shop-assests/potato seeds.jpg', description: 'Certified potato seed tubers - 1kg', inStock: true },
+  { id: 'mango-plants', name: 'Mango Saplings', category: 'seeds', price: 250, image: '/shop-assests/mango seeds.jpg', description: 'Grafted mango saplings - 1 plant', inStock: true },
+  { id: 'watermelon-seeds', name: 'Watermelon Seeds', category: 'seeds', price: 350, image: '/shop-assests/watermelon seeds.jpg', description: 'Sweet watermelon hybrid seeds - 50g', inStock: true },
 
   // FERTILIZERS & PESTICIDES
-  { id: 'npk-fertilizer', name: 'NPK 19:19:19', category: 'fertilizer', price: 580, image: '/shop/npk-fertilizer.jpg', description: 'Balanced NPK fertilizer - 1kg pack', inStock: true },
-  { id: 'vermicompost', name: 'Vermicompost', category: 'fertilizer', price: 180, image: '/shop/vermicompost.jpg', description: 'Organic vermicompost - 5kg bag', inStock: true },
-  { id: 'biochar', name: 'Biochar Soil Amendment', category: 'fertilizer', price: 220, image: '/shop/biochar.jpg', description: 'Carbon-rich biochar for soil health - 2kg', inStock: true },
-  { id: 'pesticide-1', name: 'Organic Pesticide', category: 'fertilizer', price: 380, image: '/shop/pesticide.jpg', description: 'Neem-based organic pesticide - 500ml', inStock: true },
-  { id: 'herbicide-1', name: 'Weed Killer', category: 'fertilizer', price: 450, image: '/shop/herbicide.jpg', description: 'Selective herbicide for weeds - 250ml', inStock: true },
-  { id: 'fungicide-1', name: 'Fungal Control', category: 'fertilizer', price: 320, image: '/shop/fungicide.jpg', description: 'Broad spectrum fungicide - 100g', inStock: true },
+  { id: 'npk-fertilizer', name: 'NPK 19:19:19', category: 'fertilizer', price: 580, image: '/shop-assests/chemical fertilizer.jpg', description: 'Balanced NPK fertilizer - 1kg pack', inStock: true },
+  { id: 'vermicompost', name: 'Vermicompost', category: 'fertilizer', price: 180, image: '/shop-assests/vermicompost.jpg', description: 'Organic vermicompost - 5kg bag', inStock: true },
+  { id: 'biochar', name: 'Biochar Soil Amendment', category: 'fertilizer', price: 220, image: '/shop-assests/biochar.jpg', description: 'Carbon-rich biochar for soil health - 2kg', inStock: true },
+  { id: 'pesticide-1', name: 'Organic Pesticide', category: 'fertilizer', price: 380, image: '/shop-assests/pesticide.jpg', description: 'Neem-based organic pesticide - 500ml', inStock: true },
+  { id: 'herbicide-1', name: 'Weed Killer', category: 'fertilizer', price: 450, image: '/shop-assests/herbicides.jpg', description: 'Selective herbicide for weeds - 250ml', inStock: true },
+  { id: 'fungicide-1', name: 'Fungal Control', category: 'fertilizer', price: 320, image: '/shop-assests/fungicides.jpg', description: 'Broad spectrum fungicide - 100g', inStock: true },
 
   // FARM INPUTS & CONSUMABLES
-  { id: 'poly-sheet', name: 'Polythene Sheet', category: 'inputs', price: 150, image: '/shop/poly-sheet.jpg', description: 'Transparent polythene sheet - 10x5 feet', inStock: true },
-  { id: 'grow-bags', name: 'Grow Bags Set', category: 'inputs', price: 280, image: '/shop/grow-bags.jpg', description: 'Fabric grow bags - Set of 5 (12 inch)', inStock: true },
-  { id: 'jute-bags', name: 'Jute Storage Bags', category: 'inputs', price: 65, image: '/shop/jute-bags.jpg', description: 'Natural jute storage bags - 50kg capacity', inStock: true },
-  { id: 'hdpe-bags', name: 'HDPE Storage Bags', category: 'inputs', price: 45, image: '/shop/hdpe-bags.jpg', description: 'Heavy duty HDPE bags - 25kg capacity', inStock: true },
+  { id: 'poly-sheet', name: 'Polythene Sheet', category: 'inputs', price: 150, image: '/shop-assests/irrigation kit.jpg', description: 'Transparent polythene sheet - 10x5 feet', inStock: true },
+  { id: 'grow-bags', name: 'Grow Bags Set', category: 'inputs', price: 280, image: '/shop-assests/Grow bags.jpg', description: 'Fabric grow bags - Set of 5 (12 inch)', inStock: true },
+  { id: 'jute-bags', name: 'Jute Storage Bags', category: 'inputs', price: 65, image: '/shop-assests/jute.jpg', description: 'Natural jute storage bags - 50kg capacity', inStock: true },
+  { id: 'hdpe-bags', name: 'HDPE Storage Bags', category: 'inputs', price: 45, image: '/shop-assests/marks.jpg', description: 'Heavy duty HDPE bags - 25kg capacity', inStock: true },
 
   // MAINTENANCE & WORKSHOP ITEMS
-  { id: 'grease-1', name: 'Multi-Purpose Grease', category: 'maintenance', price: 120, image: '/shop/grease.jpg', description: 'High quality machinery grease - 500g', inStock: true },
-  { id: 'lubricant-1', name: 'Engine Oil', category: 'maintenance', price: 380, image: '/shop/engine-oil.jpg', description: '15W-40 engine oil for farm equipment - 1L', inStock: true },
-  { id: 'gloves-1', name: 'Work Gloves', category: 'maintenance', price: 85, image: '/shop/gloves.jpg', description: 'Cotton work gloves - 1 pair', inStock: true },
-  { id: 'boots-1', name: 'Rubber Boots', category: 'maintenance', price: 450, image: '/shop/boots.jpg', description: 'Waterproof rubber boots - Size 8', inStock: true },
-  { id: 'mask-1', name: 'Safety Masks', category: 'maintenance', price: 25, image: '/shop/mask.jpg', description: 'Dust protection masks - Pack of 5', inStock: true },
-  { id: 'raincoat-1', name: 'Rain Coat', category: 'maintenance', price: 320, image: '/shop/raincoat.jpg', description: 'Heavy duty rain coat - Size L', inStock: true },
+  { id: 'grease-1', name: 'Multi-Purpose Grease', category: 'maintenance', price: 120, image: '/shop-assests/Grease, lubricants, oils.jpg', description: 'High quality machinery grease - 500g', inStock: true },
+  { id: 'lubricant-1', name: 'Engine Oil', category: 'maintenance', price: 380, image: '/shop-assests/Grease, lubricants, oils.jpg', description: '15W-40 engine oil for farm equipment - 1L', inStock: true },
+  { id: 'gloves-1', name: 'Work Gloves', category: 'maintenance', price: 85, image: '/shop-assests/Gloves.jpg', description: 'Cotton work gloves - 1 pair', inStock: true },
+  { id: 'boots-1', name: 'Rubber Boots', category: 'maintenance', price: 450, image: '/shop-assests/boots.jpg', description: 'Waterproof rubber boots - Size 8', inStock: true },
+  { id: 'mask-1', name: 'Safety Masks', category: 'maintenance', price: 25, image: '/shop-assests/marks.jpg', description: 'Dust protection masks - Pack of 5', inStock: true },
+  { id: 'raincoat-1', name: 'Rain Coat', category: 'maintenance', price: 320, image: '/shop-assests/istockphoto-1372196138-612x612.jpg', description: 'Heavy duty rain coat - Size L', inStock: true },
 ];
 
 const CATEGORIES = [
