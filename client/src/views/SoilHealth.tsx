@@ -1,149 +1,134 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+
+const crops = ['Wheat', 'Paddy', 'Maize', 'Cotton', 'Mustard'];
 
 export default function SoilHealth() {
   const [form, setForm] = useState({
-    crop: "",
-    N: "0",
-    P: "0",
-    K: "0",
-    S: "0",
-    Zn: "0",
-    Fe: "0",
-    Cu: "0",
-    Mn: "0",
-    B: "0",
-    OC: "0",
-    pH: "7.0",
-    EC: "0"
+    crop: crops[0],
+    N: '', P: '', K: '',
+    S: '', Zn: '', Fe: '', Cu: '', Mn: '', B: '',
+    OC: '', pH: '', EC: ''
   });
 
-  const [aiResponse, setAiResponse] = useState<any>(null);
+  const [ai, setAi] = useState<any>(null);
   const [aiLoading, setAiLoading] = useState(false);
-  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiError, setAiError] = useState('');
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
+  function update(field: string, value: string) {
+    setForm(f => ({ ...f, [field]: value }));
+  }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  async function runAI() {
+    setAiError('');
     setAiLoading(true);
-    setAiError(null);
-
-    // ✅ Validate inputs before sending
-    for (const [key, val] of Object.entries(form)) {
-      if (key === "crop") {
-        if (!val.trim()) {
-          setAiError("Please enter a crop name");
-          setAiLoading(false);
-          return;
-        }
-      } else {
-        if (val === "" || isNaN(Number(val))) {
-          setAiError(`Please enter a valid number for ${key}`);
-          setAiLoading(false);
-          return;
-        }
-      }
-    }
+    setAi(null);
 
     try {
-      const res = await fetch("http://localhost:8080/recommend", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          crop: form.crop,
-          soil: {
-            N: parseFloat(form.N),
-            P: parseFloat(form.P),
-            K: parseFloat(form.K),
-            S: parseFloat(form.S),
-            Zn: parseFloat(form.Zn),
-            Fe: parseFloat(form.Fe),
-            Cu: parseFloat(form.Cu),
-            Mn: parseFloat(form.Mn),
-            B: parseFloat(form.B),
-            OC: parseFloat(form.OC),
-            pH: parseFloat(form.pH),
-            EC: parseFloat(form.EC)
-          }
-        })
+      const payload = {
+        crop: form.crop,
+        soil: {
+          N: Number(form.N),
+          P: Number(form.P),
+          K: Number(form.K),
+          S: Number(form.S),
+          Zn: Number(form.Zn),
+          Fe: Number(form.Fe),
+          Cu: Number(form.Cu),
+          Mn: Number(form.Mn),
+          B: Number(form.B),
+          OC: Number(form.OC),
+          pH: Number(form.pH),
+          EC: Number(form.EC)
+        }
+      };
+
+      const res = await fetch('http://localhost:8080/recommend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       });
 
+      if (!res.ok) throw new Error(`Server error (${res.status})`);
+
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || "Server error");
+      if (data.status === 'success') {
+        setAi(data.data);
+      } else {
+        setAiError(data.message || 'Unknown server error');
       }
-
-      setAiResponse(data.data);
-    } catch (err: any) {
-      setAiError(err.message || "Unexpected error occurred");
+    } catch (e: any) {
+      setAiError(String(e?.message || e));
     } finally {
       setAiLoading(false);
     }
-  };
+  }
 
   return (
-    <div className="soil-health">
-      <h2>Soil Health & Fertilizer Recommendation</h2>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Crop:</label>
-          <input
-            type="text"
-            name="crop"
-            value={form.crop}
-            onChange={handleChange}
-            required
-          />
-        </div>
+    <motion.div
+      className="grid"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+    >
+      <motion.section className="card">
+        <h2>🌱 Fertilizer Recommendations</h2>
+        <p className="muted">Enter crop and soil data to get AI-powered fertilizer guidance.</p>
 
-        {[
-          "N",
-          "P",
-          "K",
-          "S",
-          "Zn",
-          "Fe",
-          "Cu",
-          "Mn",
-          "B",
-          "OC",
-          "pH",
-          "EC"
-        ].map((field) => (
-          <div key={field}>
-            <label>{field}:</label>
-            <input
-              type="number"
-              step="any"
-              name={field}
-              value={form[field as keyof typeof form]}
-              onChange={handleChange}
-              required
-            />
+        <div className="form-grid">
+          <div className="form-group">
+            <label>Crop Type</label>
+            <select value={form.crop} onChange={e => update('crop', e.target.value)}>
+              {crops.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
           </div>
-        ))}
 
-        <button type="submit" disabled={aiLoading}>
-          {aiLoading ? "Loading..." : "Get Recommendation"}
-        </button>
-      </form>
-
-      {aiError && <p style={{ color: "red" }}>{aiError}</p>}
-
-      {aiResponse && (
-        <div className="results">
-          <h3>Recommendations:</h3>
-          <pre>{JSON.stringify(aiResponse.recommendations, null, 2)}</pre>
-          <h3>Doses:</h3>
-          <pre>{JSON.stringify(aiResponse.doses, null, 2)}</pre>
+          {['N','P','K','S','Zn','Fe','Cu','Mn','B','OC','pH','EC'].map(nutrient => (
+            <div className="form-group" key={nutrient}>
+              <label>{nutrient}{['N','P','K'].includes(nutrient)? ' (kg/ha)' : nutrient==='OC'? ' (%)' : nutrient==='pH'? '' : ' (ppm)'}</label>
+              <input
+                type="number"
+                value={(form as any)[nutrient]}
+                onChange={e => update(nutrient, e.target.value)}
+                placeholder={`Enter ${nutrient}`}
+              />
+            </div>
+          ))}
         </div>
+
+        <div style={{ marginTop: 12 }}>
+          <button onClick={runAI} disabled={aiLoading}>
+            {aiLoading ? 'Running AI Analysis...' : 'Get Recommendation'}
+          </button>
+          {aiError && <p style={{color:'red'}}>{aiError}</p>}
+        </div>
+      </motion.section>
+
+      {ai && (
+        <motion.section className="card" style={{marginTop:12}}>
+          <h3>🎯 AI Model Recommendation</h3>
+
+          {ai.recommendations?.length > 0 && (
+            <div>
+              <h4>📋 Recommendations</h4>
+              <ul>
+                {ai.recommendations.map((r: string, i: number) => <li key={i}>{r}</li>)}
+              </ul>
+            </div>
+          )}
+
+          {ai.doses && (
+            <div>
+              <h4>🌿 Fertilizer Quantities</h4>
+              <ul>
+                {Object.entries(ai.doses).map(([fert, qty]) => (
+                  <li key={fert}>{fert}: {qty}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </motion.section>
       )}
-    </div>
+    </motion.div>
   );
 }
