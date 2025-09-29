@@ -23,15 +23,7 @@ export default function SoilHealth() {
 		setForm(f => ({ ...f, [field]: value }));
 	}
 
-	async function pingApi() {
-		setApiStatus('unknown');
-		try {
-			const resp = await fetch('/api/soilhealth/ping');
-			setApiStatus(resp.ok ? 'online' : 'offline');
-		} catch {
-			setApiStatus('offline');
-		}
-	}
+
 
 	async function runAI() {
 		setAiError('');
@@ -46,7 +38,7 @@ export default function SoilHealth() {
 				potassium: form.potassium,
 				ec: form.ec
 			};
-			const r = await fetch('/api/soilhealth/recommend', {
+			const r = await fetch('http://localhost:8080/recommend', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(payload)
@@ -79,21 +71,7 @@ export default function SoilHealth() {
 					<p className="muted">Enter basic soil test values to get AI-powered guidance for optimal crop growth.</p>
 				</div>
 				
-				<div className="api-status">
-					<span className="status-label">API Status:</span>
-					<span className={`status-indicator ${apiStatus}`}>
-						{apiStatus === 'unknown' ? '—' : apiStatus === 'online' ? '🟢 Online' : '🔴 Offline'}
-					</span>
-					<motion.button 
-						onClick={pingApi} 
-						type="button"
-						className="secondary"
-						whileHover={{ scale: 1.05 }}
-						whileTap={{ scale: 0.95 }}
-					>
-						Check API
-					</motion.button>
-				</div>
+
 
 				<div className="form-grid">
 					<div className="form-group">

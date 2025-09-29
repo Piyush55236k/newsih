@@ -8,7 +8,7 @@ const features = [
     title: 'Fertilizer Recommendation',
     description: 'Get AI-powered fertilizer recommendations based on your soil test results',
     icon: '🌱',
-    path: '/soil',
+    path: '/fertilizer',
     color: 'green',
     gradient: 'linear-gradient(135deg, var(--green-50), var(--green-100))'
   },
@@ -190,7 +190,7 @@ export default function OnboardingPage() {
         </div>
 
         <div className="quick-actions-grid">
-          <Link to="/soil" className="quick-action-card primary">
+          <Link to="/fertilizer" className="quick-action-card primary">
             <div className="quick-action-icon">🌱</div>
             <div className="quick-action-content">
               <h3>Fertilizer Recommendation</h3>
@@ -234,3 +234,4 @@ export default function OnboardingPage() {
     </motion.div>
   );
 }
+

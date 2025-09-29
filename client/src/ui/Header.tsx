@@ -55,7 +55,7 @@ export default function Header({ points }: { points: number }) {
         
         <nav className="header-nav">
           <NavLink to="/" label="Home Page" icon="🏠" />
-          <NavLink to="/soil" label="Fertilizer Recommendation" icon="🌱" />
+          <NavLink to="/fertilizer" label="Fertilizer Recommendation" icon="🌱" />
           <NavLink to="/weather" label="Weather" icon="🌤️" />
           <NavLink to="/shop" label="Shop" icon="🛒" />
         </nav>
@@ -188,7 +188,8 @@ export default function Header({ points }: { points: number }) {
               </div>
               <div className="mobile-nav-section">
                 <h4>Core Features</h4>
-                <NavLink to="/soil" label="Fertilizer Recommendation" icon="🌱" onClick={() => setMenuOpen(false)} />
+                <NavLink to="/fertilizer" label="Fertilizer Recommendation" icon="🌱" onClick={() => setMenuOpen(false)} />
+                <NavLink to="/fertilizer" label="Fertilizer Recommendation" icon="🌱" onClick={() => setMenuOpen(false)} />
                 <NavLink to="/weather" label="Weather" icon="🌤️" onClick={() => setMenuOpen(false)} />
                 <NavLink to="/pests" label="Pest Detection" icon="🐛" onClick={() => setMenuOpen(false)} />
                 <NavLink to="/market" label="Market Prices" icon="💰" onClick={() => setMenuOpen(false)} />

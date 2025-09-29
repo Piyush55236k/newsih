@@ -23,7 +23,7 @@ const router = createBrowserRouter([
 		element: <App />,
 		children: [
 			{ index: true, element: <OnboardingPage /> },
-			{ path: 'soil', element: <SoilHealth /> },
+			{ path: 'fertilizer', element: <SoilHealth /> },
 			{ path: 'weather', element: <Weather /> },
 			{ path: 'pests', element: <PestDetect /> },
 			{ path: 'market', element: <Market /> },
