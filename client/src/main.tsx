@@ -2,6 +2,7 @@ import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import App from './ui/App'
+import TaskManager from './views/TaskManager'
 import SoilHealth from './views/SoilHealth'
 import Weather from './views/Weather'
 import PestDetect from './views/PestDetect'
@@ -35,6 +36,7 @@ const router = createBrowserRouter([
 			,{ path: 'advisory', element: <CropAdvisory /> }
 			,{ path: 'features', element: <OnboardingPage /> }
 			,{ path: 'shop', element: <Shop /> }
+			,{ path: 'task-manager', element: <TaskManager /> }
 			,{ path: 'admin', element: <Admin /> }
 		]
 	}

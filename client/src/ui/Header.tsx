@@ -56,6 +56,7 @@ export default function Header({ points }: { points: number }) {
         <nav className="header-nav">
           <NavLink to="/" label="Home" icon="🏠" />
           <NavLink to="/shop" label="Shop" icon="🛒" />
+          <NavLink to="/task-manager" label="Task Manager" icon="📝" />
         </nav>
         <div className="header-actions mobile-hide">
           <motion.div

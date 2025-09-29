@@ -92,13 +92,11 @@ export async function applyLanguage(lang: string, options?: { reload?: boolean }
     _pending = false
     _queuedLang = null
     if (reload) {
-      // Hard refresh to clear any residual translations
       window.location.reload()
     }
     return
   }
   if (reload) {
-    // Set cookie and reload to guarantee full translation
     setCookie('googtrans', `/en/${lang}`)
     setCookie('googtrans', `/en/${lang}`)
     _lastLang = lang
@@ -107,8 +105,23 @@ export async function applyLanguage(lang: string, options?: { reload?: boolean }
     window.location.reload()
     return
   }
-  // Try programmatic change via the widget's combo
-  await loadGoogleTranslate()
+  // Try programmatic change via the widget's combo, but fallback if it doesn't load
+  let loaded = false
+  const timeout = new Promise<void>(resolve => setTimeout(resolve, 3000))
+  await Promise.race([
+    loadGoogleTranslate().then(() => { loaded = true }),
+    timeout
+  ])
+  if (!loaded) {
+    // Fallback: set cookie and reload to guarantee translation
+    setCookie('googtrans', `/en/${lang}`)
+    setCookie('googtrans', `/en/${lang}`)
+    _lastLang = lang
+    _pending = false
+    _queuedLang = null
+    window.location.reload()
+    return
+  }
   const tries = 50
   for (let i = 0; i < tries; i++) {
     const combo = document.querySelector<HTMLSelectElement>('.goog-te-combo')
