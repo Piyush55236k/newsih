@@ -75,18 +75,36 @@ function deleteCookieAllScopes(name: string) {
 let _lastLang = ''
 let _pending = false
 let _queuedLang: string | null = null
-export async function applyLanguage(lang: string) {
+/**
+ * Apply a language using Google Translate.
+ * If options.reload is true, we set the googtrans cookie and reload the page
+ * to ensure translation applies everywhere reliably.
+ */
+export async function applyLanguage(lang: string, options?: { reload?: boolean }) {
   if (!lang) lang = 'en'
-  if (_pending) { _queuedLang = lang; return }
-  if (lang === _lastLang) return
+  const reload = !!options?.reload
+  if (_pending && !reload) { _queuedLang = lang; return }
+  if (lang === _lastLang && !reload) return
   _pending = true
   if (lang === 'en') {
-    // Prevent endless reload loop: only reload once per session
     deleteCookieAllScopes('googtrans')
     _lastLang = 'en'
     _pending = false
     _queuedLang = null
-    // Avoid page reload to preserve SPA navigation
+    if (reload) {
+      // Hard refresh to clear any residual translations
+      window.location.reload()
+    }
+    return
+  }
+  if (reload) {
+    // Set cookie and reload to guarantee full translation
+    setCookie('googtrans', `/en/${lang}`)
+    setCookie('googtrans', `/en/${lang}`)
+    _lastLang = lang
+    _pending = false
+    _queuedLang = null
+    window.location.reload()
     return
   }
   // Try programmatic change via the widget's combo

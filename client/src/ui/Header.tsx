@@ -23,6 +23,7 @@ export default function Header({ points }: { points: number }) {
   useEffect(() => {
     // Persist and apply
     try { localStorage.setItem('lang', lang); } catch {}
+    // Apply without reload first for instant feedback
     void applyLanguage(lang);
   }, [lang]);
 
@@ -105,8 +106,13 @@ export default function Header({ points }: { points: number }) {
                     right: 0,
                     top: '110%',
                     minWidth: 220,
+                    maxHeight: 260,
+                    overflowY: 'auto',
                     padding: 8,
                     zIndex: 20,
+                    background: 'var(--bg-elevated, #ffffff)',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+                    border: '1px solid var(--border-color, #eee)'
                   }}
                 >
                   {LANGUAGES.map((l) => (
@@ -121,10 +127,13 @@ export default function Header({ points }: { points: number }) {
                           display: 'flex',
                           alignItems: 'center',
                           gap: 8,
+                          background: 'transparent'
                         }}
                         onClick={() => {
                           setLang(l.code);
                           setLangOpen(false);
+                          // Force reload so the whole app reflects language immediately
+                          setTimeout(() => applyLanguage(l.code, { reload: true }), 10);
                         }}
                       >
                         <span style={{ fontSize: 16 }}>🌐</span>
@@ -187,7 +196,10 @@ export default function Header({ points }: { points: number }) {
                   <select
                     value={lang}
                     onChange={(e) => {
-                      setLang(e.target.value);
+                      const value = e.target.value
+                      setLang(value);
+                      // Reload to apply across the site
+                      setTimeout(() => applyLanguage(value, { reload: true }), 10);
                     }}
                     aria-label="Select language"
                     style={{ flex: 1 }}
