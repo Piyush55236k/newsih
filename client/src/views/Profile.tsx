@@ -42,6 +42,22 @@ export default function Profile() {
     setMsg(ok ? '✅ Synced with cloud.' : '⚠️ Saved locally. Will sync when online.');
   };
 
+  const doSignOut = () => {
+    if (!confirm('Are you sure you want to sign out? This will clear your local data.')) return;
+    
+    // Clear all local storage data
+    localStorage.clear();
+    sessionStorage.clear();
+    
+    // Clear any cookies
+    document.cookie.split(";").forEach(function(c) { 
+      document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+    });
+    
+    // Reload the page to reset the app state
+    window.location.href = '/';
+  };
+
   return (
     <motion.div
       className="profile-container"
@@ -72,6 +88,15 @@ export default function Profile() {
             whileTap={{ scale: 0.98 }}
           >
             {syncing ? 'Syncing…' : 'Sync now'}
+          </motion.button>
+          <motion.button
+            className="danger"
+            onClick={doSignOut}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.98 }}
+            style={{ marginLeft: 8 }}
+          >
+            🚪 Sign Out
           </motion.button>
           {msg && (
             <span
