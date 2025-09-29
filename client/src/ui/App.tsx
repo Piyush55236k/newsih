@@ -1,6 +1,6 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import { useState, useEffect, Suspense } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { ensureProfileBootstrap, getProfile } from '../lib/profile';
 import { ToastHost } from './Toast';
 import Onboarding from './Onboarding';
@@ -26,20 +26,16 @@ export default function App() {
       <motion.main className="content" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
         <div className="content-inner">
           <ToastHost />
-          <AnimatePresence mode="wait">
+          <Suspense fallback={<div className="loading">Loading…</div>}>
             <motion.div
               key={location.pathname}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 16 }}
-              transition={{ duration: 0.4 }}
-              className="fade-in"
+              initial={{ opacity: 0, y: 16, scale: 0.995, filter: 'blur(3px)' }}
+              animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+              transition={{ duration: 0.35, ease: 'easeOut' }}
             >
-              <Suspense fallback={<div className="loading">Loading…</div>}>
-                <Outlet />
-              </Suspense>
+              <Outlet />
             </motion.div>
-          </AnimatePresence>
+          </Suspense>
         </div>
       </motion.main>
       <Suspense fallback={<div className="loading">Loading…</div>}>

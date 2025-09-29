@@ -82,22 +82,12 @@ export async function applyLanguage(lang: string) {
   _pending = true
   if (lang === 'en') {
     // Prevent endless reload loop: only reload once per session
-    if (!sessionStorage.getItem('langReloaded')) {
-      deleteCookieAllScopes('googtrans')
-      sessionStorage.setItem('langReloaded', '1')
-      _lastLang = 'en'
-      _pending = false
-      _queuedLang = null
-      window.location.reload()
-      return
-    } else {
-      // Already reloaded once, do not reload again
-      sessionStorage.removeItem('langReloaded')
-      _lastLang = 'en'
-      _pending = false
-      _queuedLang = null
-      return
-    }
+    deleteCookieAllScopes('googtrans')
+    _lastLang = 'en'
+    _pending = false
+    _queuedLang = null
+    // Avoid page reload to preserve SPA navigation
+    return
   }
   // Try programmatic change via the widget's combo
   await loadGoogleTranslate()
@@ -115,8 +105,7 @@ export async function applyLanguage(lang: string) {
     }
     await new Promise(r => setTimeout(r, 100))
   }
-  // Fallback: set cookie and reload (last resort)
+  // Fallback: set cookie only (avoid reload to preserve SPA state)
   setCookie('googtrans', `/en/${lang}`)
   setCookie('googtrans', `/en/${lang}`)
-  window.location.reload()
 }

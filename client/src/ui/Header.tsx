@@ -2,11 +2,11 @@ import { Link, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const NavLink = ({ to, label, icon }: { to: string; label: string; icon: string }) => {
+const NavLink = ({ to, label, icon, onClick }: { to: string; label: string; icon: string; onClick?: () => void }) => {
   const loc = useLocation();
   const active = loc.pathname === to || (to !== '/' && loc.pathname.startsWith(to));
   return (
-    <Link className={active ? 'nav-link active' : 'nav-link'} to={to}>
+    <Link className={active ? 'nav-link active' : 'nav-link'} to={to} onClick={onClick}>
       <span className="nav-icon">{icon}</span>
       <span className="nav-label">{label}</span>
     </Link>
@@ -31,9 +31,9 @@ export default function Header({ points }: { points: number }) {
         </motion.div>
         
         <nav className="header-nav">
-      <NavLink to="/soil" label="Fertilizer Recommendation" icon="🌱" />
+          <NavLink to="/" label="Home Page" icon="🏠" />
+          <NavLink to="/soil" label="Fertilizer Recommendation" icon="🌱" />
           <NavLink to="/weather" label="Weather" icon="🌤️" />
-          <NavLink to="/features" label="All Features" icon="✨" />
         </nav>
         
         <div className="header-actions">
@@ -56,19 +56,7 @@ export default function Header({ points }: { points: number }) {
             </span>
           </motion.div>
           
-          <Link 
-            className="nav-link profile-link" 
-            to="/profile"
-            onClick={(e) => {
-              console.log('Profile link clicked!');
-              // Optional: Force navigation if there are issues
-              // e.preventDefault();
-              // window.location.href = '/profile';
-            }}
-          >
-            <span className="nav-icon">🧑‍🌾</span>
-            <span className="nav-label">Profile</span>
-          </Link>
+          <NavLink to="/profile" label="Profile" icon="🧑‍🌾" />
           
           <motion.button 
             className="mobile-menu-toggle" 
@@ -98,23 +86,26 @@ export default function Header({ points }: { points: number }) {
           >
             <nav className="mobile-nav">
               <div className="mobile-nav-section">
+                <h4>Main</h4>
+                <NavLink to="/" label="Home Page" icon="🏠" onClick={() => setMenuOpen(false)} />
+              </div>
+              <div className="mobile-nav-section">
                 <h4>Core Features</h4>
-                <NavLink to="/soil" label="Soil Health" icon="🌱" />
-                <NavLink to="/weather" label="Weather" icon="🌤️" />
-                <NavLink to="/pests" label="Pest Detection" icon="🐛" />
-                <NavLink to="/market" label="Market Prices" icon="💰" />
+                <NavLink to="/soil" label="Fertilizer Recommendation" icon="🌱" onClick={() => setMenuOpen(false)} />
+                <NavLink to="/weather" label="Weather" icon="🌤️" onClick={() => setMenuOpen(false)} />
+                <NavLink to="/pests" label="Pest Detection" icon="🐛" onClick={() => setMenuOpen(false)} />
+                <NavLink to="/market" label="Market Prices" icon="💰" onClick={() => setMenuOpen(false)} />
               </div>
               <div className="mobile-nav-section">
                 <h4>More Features</h4>
-                <NavLink to="/features" label="All Features" icon="✨" />
                 <NavLink to="/advisory" label="Crop Advisory" icon="🌾" />
                 <NavLink to="/community" label="Community" icon="👥" />
                 <NavLink to="/quests" label="Quests" icon="🎯" />
               </div>
               <div className="mobile-nav-section">
                 <h4>Account</h4>
-                <NavLink to="/profile" label="Profile" icon="🧑‍🌾" />
-                <NavLink to="/feedback" label="Feedback" icon="💬" />
+                <NavLink to="/profile" label="Profile" icon="🧑‍🌾" onClick={() => setMenuOpen(false)} />
+                <NavLink to="/feedback" label="Feedback" icon="💬" onClick={() => setMenuOpen(false)} />
               </div>
             </nav>
           </motion.div>
