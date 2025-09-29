@@ -21,6 +21,15 @@ export default function CropAdvisory(){
     past_crop: 'Wheat',
     date: new Date().toISOString().slice(0,10)
   }))
+
+  // Auto-detect user location on mount
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      pos => setForm(f => ({ ...f, lat: String(pos.coords.latitude), lon: String(pos.coords.longitude) })),
+      () => {}
+    );
+  }, []);
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string|null>(null)
   const [resp, setResp] = useState<any>(null)

@@ -1,3 +1,41 @@
+def get_weather(lat, lon, date=None):
+    """
+    Fetch real weather data (rainfall, temperature) from Open-Meteo API for the given location and date.
+    """
+    try:
+        # Use Open-Meteo API (no key required)
+        # If date is None, use today
+        if date is None:
+            date = datetime.today().strftime('%Y-%m-%d')
+        url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&start_date={date}&end_date={date}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=auto"
+        resp = requests.get(url, timeout=10)
+        resp.raise_for_status()
+        data = resp.json()
+        # Parse daily weather
+        daily = data.get('daily', {})
+        temp_max = daily.get('temperature_2m_max', [None])[0]
+        temp_min = daily.get('temperature_2m_min', [None])[0]
+        rainfall = daily.get('precipitation_sum', [None])[0]
+        # Use average temp if both available
+        if temp_max is not None and temp_min is not None:
+            temp = round((temp_max + temp_min) / 2, 1)
+        elif temp_max is not None:
+            temp = temp_max
+        elif temp_min is not None:
+            temp = temp_min
+        else:
+            temp = None
+        # Season detection (reuse existing logic)
+        season = detect_season(date, rainfall, temp)
+        return {
+            "temp": temp,
+            "rainfall": rainfall,
+            "season": season,
+            "sources": ["Open-Meteo"]
+        }
+    except Exception as e:
+        print(f"❌ Open-Meteo weather fetch failed: {e}")
+        return get_fallback_weather(lat, lon, date)
 
 
 from flask import Flask, request, jsonify, render_template, make_response
@@ -843,22 +881,14 @@ def recommend():
         print(f"✅ Final soil data: {soil_data}")
 
         # Get weather data with guaranteed fallback
-        try:
-            weather_data = get_weather(lat, lon, date)
-        except Exception as e:
-            print(f"❌ Weather data error: {e}")
-            print("🎯 Using fallback weather data")
-            weather_data = get_fallback_weather(lat, lon, date)
-        
-        # Ensure weather_data always has the required structure  
+        # Always use real weather data if possible
+        weather_data = get_weather(lat, lon, date)
+        # Ensure weather_data always has the required structure
         if not weather_data or not isinstance(weather_data, dict):
-            print("⚠️ Invalid weather data, using default fallback")
+            print("⚠️ Invalid weather data, using fallback")
             weather_data = get_fallback_weather(lat, lon, date)
-            
-        # Ensure sources is always a valid array
         if 'sources' not in weather_data or not isinstance(weather_data['sources'], list):
             weather_data['sources'] = ["Fallback"]
-        
         print(f"✅ Final weather data: {weather_data}")
 
         # Get recommendations with comprehensive error handling
