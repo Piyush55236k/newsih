@@ -18,6 +18,7 @@ export default function Header({ points }: { points: number }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
   const [lang, setLang] = useState<string>(() => localStorage.getItem('lang') || 'en');
+  const currentLangLabel = useMemo(() => LANGUAGES.find(l => l.code === lang)?.label || 'English', [lang]);
 
   // Apply language on mount and whenever it changes
   useEffect(() => {
@@ -89,7 +90,7 @@ export default function Header({ points }: { points: number }) {
               aria-expanded={langOpen}
             >
               <span style={{ marginRight: 6 }}>🌐</span>
-              {useMemo(() => LANGUAGES.find(l => l.code === lang)?.label || 'English', [lang])}
+              {currentLangLabel}
               <span style={{ marginLeft: 6, opacity: 0.7 }}>▾</span>
             </motion.button>
             <AnimatePresence>
@@ -117,7 +118,7 @@ export default function Header({ points }: { points: number }) {
                 >
                   {LANGUAGES.map((l) => (
                     <li key={l.code}>
-                      <button
+                      <motion.button
                         className={l.code === lang ? 'secondary' : ''}
                         style={{
                           width: '100%',
@@ -127,8 +128,10 @@ export default function Header({ points }: { points: number }) {
                           display: 'flex',
                           alignItems: 'center',
                           gap: 8,
-                          background: 'transparent'
+                          background: 'transparent',
+                          color: 'var(--text-primary)'
                         }}
+                        whileHover={{ backgroundColor: 'var(--green-50)' }}
                         onClick={() => {
                           setLang(l.code);
                           setLangOpen(false);
@@ -141,7 +144,7 @@ export default function Header({ points }: { points: number }) {
                         {l.code === lang && (
                           <span style={{ marginLeft: 'auto' }}>✓</span>
                         )}
-                      </button>
+                      </motion.button>
                     </li>
                   ))}
                 </motion.ul>
