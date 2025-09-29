@@ -8,11 +8,7 @@ const crops = [
 export default function SoilHealth() {
 	const [form, setForm] = useState({
 		crop: crops[0],
-		ph: '',
-		nitrogen: '',
-		phosphorus: '',
-		potassium: '',
-		ec: ''
+		soil: ''
 	});
 	const [ai, setAi] = useState<any>(null);
 	const [aiLoading, setAiLoading] = useState(false);
@@ -32,13 +28,9 @@ export default function SoilHealth() {
 		try {
 			const payload = {
 				crop: form.crop,
-				ph: form.ph,
-				nitrogen: form.nitrogen,
-				phosphorus: form.phosphorus,
-				potassium: form.potassium,
-				ec: form.ec
+				soil: form.soil
 			};
-			const r = await fetch('http://localhost:8080/recommend', {
+			const r = await fetch('/api/recommend', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(payload)
@@ -60,88 +52,68 @@ export default function SoilHealth() {
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ duration: 0.6 }}
 		>
-			<motion.section 
-				className="card fade-in" 
-				initial={{ scale: 0.95, opacity: 0 }}
-				animate={{ scale: 1, opacity: 1 }}
-				transition={{ duration: 0.5, delay: 0.1 }}
-			>
-				<div className="card-header">
-					<h2>🌱 Fertilizer Recommendations</h2>
-					<p className="muted">Enter basic soil test values to get AI-powered guidance for optimal crop growth.</p>
-				</div>
-				
-
-
-				<div className="form-grid">
-					<div className="form-group">
-						<label>Crop Type</label>
-						<select 
-							value={form.crop} 
-							onChange={e => update('crop', e.target.value)}
-							className="form-select"
-						>
-							{crops.map(c => <option key={c} value={c}>{c}</option>)}
-						</select>
-					</div>
-					
-					<div className="form-group">
-						<label>pH Level</label>
-						<input 
-							type="number" 
-							step="0.1" 
-							value={form.ph} 
-							onChange={e => update('ph', e.target.value)} 
-							placeholder="6.5" 
-							className="form-input"
-						/>
-					</div>
-					
-					<div className="form-group">
-						<label>Nitrogen (kg/ha)</label>
-						<input 
-							type="number" 
-							value={form.nitrogen} 
-							onChange={e => update('nitrogen', e.target.value)} 
-							placeholder="300" 
-							className="form-input"
-						/>
-					</div>
-					
-					<div className="form-group">
-						<label>Phosphorus (kg/ha)</label>
-						<input 
-							type="number" 
-							value={form.phosphorus} 
-							onChange={e => update('phosphorus', e.target.value)} 
-							placeholder="15" 
-							className="form-input"
-						/>
-					</div>
-					
-					<div className="form-group">
-						<label>Potassium (kg/ha)</label>
-						<input 
-							type="number" 
-							value={form.potassium} 
-							onChange={e => update('potassium', e.target.value)} 
-							placeholder="140" 
-							className="form-input"
-						/>
-					</div>
-					
-					<div className="form-group">
-						<label>EC (dS/m)</label>
-						<input 
-							type="number" 
-							step="0.1" 
-							value={form.ec} 
-							onChange={e => update('ec', e.target.value)} 
-							placeholder="1.5" 
-							className="form-input"
-						/>
-					</div>
-				</div>
+					<motion.section className="card fade-in" initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.5, delay: 0.1 }}>
+						<div className="card-header">
+							<h2>🌱 Fertilizer Recommendations</h2>
+							<p className="muted">Enter crop and soil type to get AI-powered fertilizer guidance.</p>
+						</div>
+						<div className="form-grid">
+							<div className="form-group">
+								<label>Crop Type</label>
+								<select 
+									value={form.crop} 
+									onChange={e => update('crop', e.target.value)}
+									className="form-select"
+								>
+									{crops.map(c => <option key={c} value={c}>{c}</option>)}
+								</select>
+							</div>
+							<div className="form-group">
+								<label>Soil Type</label>
+								<input 
+									type="text" 
+									value={form.soil} 
+									onChange={e => update('soil', e.target.value)} 
+									placeholder="e.g. Loamy, Sandy, Clay" 
+									className="form-input"
+								/>
+							</div>
+						</div>
+						<div className="action-section">
+							<motion.button 
+								onClick={runAI} 
+								disabled={aiLoading}
+								className={`primary-btn ${aiLoading ? 'loading' : ''}`}
+								whileHover={{ scale: 1.05 }}
+								whileTap={{ scale: 0.95 }}
+								animate={aiLoading ? { scale: [1, 1.02, 1] } : {}}
+								transition={{ duration: 0.5, repeat: aiLoading ? Infinity : 0 }}
+							>
+								{aiLoading ? (
+									<>
+										<span className="loading-spinner"></span>
+										Running AI Analysis...
+									</>
+								) : (
+									<>
+										<span className="btn-icon">🤖</span>
+										Get AI Recommendation
+									</>
+								)}
+							</motion.button>
+							{aiError && (
+								<motion.div 
+									className="error-message"
+									initial={{ opacity: 0, y: -10 }}
+									animate={{ opacity: 1, y: 0 }}
+									transition={{ duration: 0.3 }}
+								>
+									<span className="error-icon">⚠️</span>
+									{aiError}
+								</motion.div>
+							)}
+						</div>
+					</motion.section>
 
 				<div className="action-section">
 					<motion.button 
@@ -221,10 +193,10 @@ export default function SoilHealth() {
 								{ai.fert.map((fertilizer: string, i: number) => (
 									<motion.span 
 										key={i}
-										className="fertilizer-tag"
 										initial={{ scale: 0 }}
 										animate={{ scale: 1 }}
 										transition={{ duration: 0.3, delay: i * 0.1 }}
+										className="fertilizer-tag"
 									>
 										{fertilizer}
 									</motion.span>
@@ -232,28 +204,3 @@ export default function SoilHealth() {
 							</div>
 						</div>
 					)}
-
-					{ai.split && (
-						<div className="application-section">
-							<h4>📅 Application Schedule</h4>
-							<div className="application-info">
-								<span className="info-icon">📋</span>
-								{ai.split}
-							</div>
-						</div>
-					)}
-
-					{ai.dose && (
-						<div className="dose-section">
-							<h4>⚖️ Dosage Information</h4>
-							<div className="dose-info">
-								<span className="dose-icon">📊</span>
-								{ai.dose}
-							</div>
-						</div>
-					)}
-				</motion.section>
-			)}
-		</motion.div>
-	);
-}
