@@ -1,57 +1,77 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 
-const crops = [
-  'Wheat', 'Rice', 'Maize', 'Barley', 'Soybean', 'Cotton', 'Sugarcane', 'Potato', 'Tomato', 'Onion', 'Other'
+// Supported crops
+const crops = ['Wheat', 'Paddy', 'Maize', 'Cotton', 'Mustard'];
+
+type SoilInput = {
+  N: number;
+  P: number;
+  K: number;
+  S: number;
+  Zn: number;
+  Fe: number;
+  Cu: number;
+  Mn: number;
+  B: number;
+  OC: number;
+  pH: number;
+  EC: number;
+};
+
+type AIResponse = {
+  recommendations: string[];
+  doses: Record<string, number>;
+};
+
+// Grouping nutrients for cleaner UI
+const groups: { label: string; fields: (keyof SoilInput)[] }[] = [
+  { label: 'Major Nutrients', fields: ['N', 'P', 'K'] },
+  { label: 'Secondary Nutrients', fields: ['S'] },
+  { label: 'Micronutrients', fields: ['Zn', 'Fe', 'Cu', 'Mn', 'B'] },
+  { label: 'Soil Properties', fields: ['OC', 'pH', 'EC'] },
 ];
 
 export default function SoilHealth() {
-  const [form, setForm] = useState({
-    crop: crops[0],
-    N: '', P: '', K: '',
-    S: '', Zn: '', Fe: '', Cu: '', Mn: '', B: '',
-    OC: '', pH: '', EC: ''
+  const [crop, setCrop] = useState(crops[0]);
+  const [soil, setSoil] = useState<SoilInput>({
+    N: 0, P: 0, K: 0, S: 0, Zn: 0, Fe: 0, Cu: 0, Mn: 0, B: 0, OC: 0, pH: 7, EC: 0
   });
-  const [ai, setAi] = useState<any>(null);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiError, setAiError] = useState('');
 
-  function update(field: string, value: string) {
-    setForm(f => ({ ...f, [field]: value }));
+  const [ai, setAi] = useState<AIResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  function updateSoil(field: keyof SoilInput, value: string) {
+    const num = parseFloat(value);
+    setSoil(prev => ({ ...prev, [field]: isNaN(num) ? 0 : num }));
   }
 
   async function runAI() {
-    setAiError('');
-    setAiLoading(true);
+    setError('');
     setAi(null);
-
-    // Prepare soil data
-    const soilData: Record<string, number> = {};
-    ['N','P','K','S','Zn','Fe','Cu','Mn','B','OC','pH','EC'].forEach(key => {
-      soilData[key] = parseFloat(form[key as keyof typeof form]) || 0;
-    });
+    setLoading(true);
 
     try {
-      const payload = {
-        crop: form.crop,
-        soil: soilData
-      };
-      const r = await fetch('https://fertilizer-5hx9.onrender.com/recommend', {
+      const payload = { crop, soil };
+      const res = await fetch('https://fertilizer-5hx9.onrender.com/recommend', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      if (!r.ok) throw new Error(`Request failed (${r.status})`);
-      const resp = await r.json();
-      if(resp.status === 'success') {
-        setAi(resp.data);
+
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      const data = await res.json();
+
+      if (data.status === 'success') {
+        setAi(data.data as AIResponse);
       } else {
-        setAiError(resp.message || 'Unknown error from API');
+        throw new Error(data.message || 'Unknown API error');
       }
     } catch (e: any) {
-      setAiError(String(e?.message || e));
+      setError(e.message || 'Something went wrong');
     } finally {
-      setAiLoading(false);
+      setLoading(false);
     }
   }
 
@@ -61,55 +81,63 @@ export default function SoilHealth() {
         <h2>🌱 Fertilizer Recommendations</h2>
         <p className="muted">Enter crop and soil nutrient values to get AI-powered fertilizer guidance.</p>
 
-        <div className="form-grid">
-          <div className="form-group">
-            <label>Crop Type</label>
-            <select value={form.crop} onChange={e => update('crop', e.target.value)} className="form-select">
-              {crops.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
+        <div className="form-group">
+          <label>Crop Type</label>
+          <select value={crop} onChange={e => setCrop(e.target.value)} className="form-select">
+            {crops.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
 
-          {['N','P','K','S','Zn','Fe','Cu','Mn','B','OC','pH','EC'].map(key => (
-            <div className="form-group" key={key}>
-              <label>{key} {['N','P','K'].includes(key) ? '(kg/ha)' : ['S','Zn','Fe','Cu','Mn','B'].includes(key) ? '(ppm)' : key==='OC' ? '(%)' : key==='EC' ? '(dS/m)' : ''}</label>
-              <input
-                type="number"
-                value={form[key as keyof typeof form]}
-                onChange={e => update(key, e.target.value)}
-                placeholder={`Enter ${key} value`}
-                className="form-input"
-              />
+        {groups.map(group => (
+          <div key={group.label} style={{ marginTop: 16 }}>
+            <h4>{group.label}</h4>
+            <div className="grid" style={{ gap: 8 }}>
+              {group.fields.map(field => (
+                <div className="form-group" key={field}>
+                  <label>{field}</label>
+                  <input
+                    type="number"
+                    value={soil[field]}
+                    step="0.1"
+                    onChange={e => updateSoil(field, e.target.value)}
+                    className="form-input"
+                  />
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
 
-        <div className="action-section">
-          <motion.button
-            onClick={runAI}
-            disabled={aiLoading}
-            className={`primary-btn ${aiLoading ? 'loading' : ''}`}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            animate={aiLoading ? { scale: [1, 1.02, 1] } : {}}
-            transition={{ duration: 0.5, repeat: aiLoading ? Infinity : 0 }}
-          >
-            {aiLoading ? 'Running AI Analysis...' : 'Get AI Recommendation'}
-          </motion.button>
-          {aiError && <div className="error-message">{aiError}</div>}
-        </div>
+        <motion.button
+          onClick={runAI}
+          disabled={loading}
+          className={`primary-btn ${loading ? 'loading' : ''}`}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          style={{ marginTop: 16 }}
+        >
+          {loading ? 'Running AI Analysis…' : 'Get AI Recommendation'}
+        </motion.button>
+
+        {error && <p style={{ color: 'red', marginTop: 8 }}>{error}</p>}
       </motion.section>
 
       {ai && (
-        <motion.section className="card result-card fade-in-delay-1" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}>
+        <motion.section className="card fade-in-delay-1" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}>
           <h3>🎯 AI Model Recommendation</h3>
-          {ai.recommendations && (
-            <ul>
-              {ai.recommendations.map((rec: string, i: number) => <li key={i}>{rec}</li>)}
-            </ul>
-          )}
-          {ai.doses && (
+
+          {ai.recommendations.length > 0 && (
             <div>
-              <h4>Fertilizer Quantities</h4>
+              <h4>📋 Recommendations</h4>
+              <ul>
+                {ai.recommendations.map((rec, i) => <li key={i}>{rec}</li>)}
+              </ul>
+            </div>
+          )}
+
+          {Object.keys(ai.doses).length > 0 && (
+            <div>
+              <h4>🌿 Fertilizer Quantities</h4>
               <ul>
                 {Object.entries(ai.doses).map(([fert, qty]) => <li key={fert}>{fert}: {qty}</li>)}
               </ul>
